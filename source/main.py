@@ -13,4 +13,4 @@ if __name__ == "__main__":
 
 	tree = parse(tokens)
 	print("\n---- SYNTAX TREE ----")
-	print(Node("program", Token("identifier", "a")))
+	print(tree)
