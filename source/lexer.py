@@ -1,23 +1,28 @@
 from dataclasses import dataclass
 
+# A token or error given by the lexer.
 @dataclass
 class Token:
 	type: str = ""
 	text: str = ""
 
-	def __repr__(self) -> str:
+	def __str__(self) -> str:
 		return f"{self.type} `{self.text}`"
 
+# Splits text into tokens.
 def lex(text: str) -> list[Token]:
 	skip = " \t\r\n"
 	keywords = {
-		"package",
-		"import",
+		"sqrt",
 	}
 	operators = {
-		"++",
-		"+=",
 		"+",
+		"-",
+		"*",
+		"/",
+		"^",
+		"(",
+		")",
 		"=",
 	}
 
