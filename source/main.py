@@ -3,14 +3,13 @@ from parser import *
 
 if __name__ == "__main__":
 	text = """
-	x = 1
-	f(x) = x + 1
+	1 + 2 * 3 + 4
 	"""
 	
-	tokens = lex(text)
 	print("---- TOKENS ----")
+	tokens = lex(text)
 	print("\n".join(map(str, lex(text))))
 
-	tree = parse(tokens)
 	print("\n---- SYNTAX TREE ----")
-	print(tree)
+	tree = parse(tokens)
+	tree.prettyPrint()
