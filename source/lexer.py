@@ -16,7 +16,7 @@ class Token:
 def lex(text: str) -> list[Token]:
 	skip = " \t\r\n"
 	keywords = {
-		"sqrt",
+		"package",
 	}
 	operators = {
 		"+",

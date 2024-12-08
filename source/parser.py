@@ -89,16 +89,22 @@ class Parser:
 	# Parses an infix expression.
 	def parseInfix(self, precedence: int) -> Node:
 		precedences = {
-			"+": 10,
-			"*": 20,
+			"^": 40,
+			"*": 30,
+			"/": 30,
+			"+": 20,
+			"-": 20,
+			"=": 10,
 		}
 		
+		# Parse the first operand.
 		left = self.parseBasic()
 		if not left:
 			return None
 		
+		# Keep parsing operands while the next operator is >= the minimum precedence.
 		children = [left]
-		while self.peek(type="operator") and precedences[self.nextToken.text] >= precedence:
+		while self.peek(type="operator") and self.nextToken.text in precedences and precedences[self.nextToken.text] >= precedence:
 			children.append(self.accept())
 			right = self.parseInfix(precedences[self.lastToken.text] + 1)
 			if not right:
@@ -112,8 +118,35 @@ class Parser:
 	
 	# Parses an atom or a parenthesized expression.
 	def parseBasic(self) -> Node:
-		if self.accept(type="number") or self.accept(type="identifier"):
-			return Node("atom", self.lastToken)
+		# Parse numbers.
+		if self.peek(type="number"):
+			return Node("atom", self.accept())
+		
+		# Parse identifiers.
+		result = None
+		if self.peek(type="identifier"):
+			result = Node("atom", self.accept())
+
+		# Parse tuples or function call arguments.
+		while self.peek(text="("):
+			parenthesized = self.parseParenthesizedExpression()
+			if not parenthesized:
+				return None
+			
+			if result:
+				result = Node("function call", result, parenthesized)
+			else:
+				result = parenthesized
+		return result
+
+	# Parses a parenthesized expression.
+	def parseParenthesizedExpression(self) -> Node:
+		if self.accept(text="("):
+			expression = self.parseInfix(0)
+			if self.accept(text=")"):
+				return expression
+			# TODO: Do better error handling here.
+			return Node("Expected `)`.")
 		return None
 
 # Turns a list of tokens into a syntax tree.

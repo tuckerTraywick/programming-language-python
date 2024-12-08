@@ -3,7 +3,7 @@ from parser import *
 
 if __name__ == "__main__":
 	text = """
-	1 + 2 * 3 + 4
+	(a+b)(1*2+3)(2)
 	"""
 	
 	print("---- TOKENS ----")

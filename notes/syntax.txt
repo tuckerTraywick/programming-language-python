@@ -1,0 +1,227 @@
+pub trait Animal {
+	pub name string
+	pub age uint32
+}
+
+pub method makeNoise(animal &Animal)
+
+pub struct Dog {
+	embed Animal
+	pub tag string
+}
+
+pub func makeNoise(dog &Dog) {}
+
+
+
+
+
+
+
+
+
+
+## Single line comment.
+
+#(
+Multi
+line
+comment.
+)#
+
+
+pub package animals
+import
+	std.io.printLine
+end
+
+pub trait Animal
+	pub name string
+	pub age uint32
+end
+
+pub method makeNoise(animal &Animal)
+
+pub struct Dog
+	embed Animal
+	pub breed string
+end
+
+pub struct Cat
+	embed Animal
+	pub breed string
+end
+
+func makeNoise(dog &Dog)
+	printLine("woof")
+end
+
+func makeNoise(cat &Cat)
+	printLine("meow")
+end
+
+func main()
+	var pet mut &Animal = &Dog{}
+	makeNoise(pet)
+	pet = &Cat{}
+	pet->makeNoise()
+end
+
+
+pub package moreAnimals
+import
+	animals.*
+end
+
+pub struct Pet cases
+	embed Dog, Cat, ...
+end
+
+pub method walk(pet &Pet)
+
+pub func walk(dog &Dog) end
+
+pub func walk(cat &Cat) end
+
+
+
+
+pub struct Color
+	pub r, g, b uint8
+cases
+	struct Rgb end
+	red = {255, 0, 0}
+	green = {0, 255, 0}
+	blue = {0, 0, 255}
+end
+
+pub trait any[type T..] cases
+	embed T
+end
+
+pub struct all[type T..]
+	embed T
+end
+
+
+
+
+pub package physics
+import
+	std.math.sqrt
+	std.operations
+end
+
+pub struct Entity
+	pub position, velocity, acceleration Vector
+cases
+	struct Circle
+		pub radius float64
+	end
+
+	struct Mesh
+		pub vertices owned []Vector
+	end
+end
+
+pub struct Vector
+	embed std.operations.Equality, .Arithmetic, .To[string]
+	pub x, y float64
+end
+
+pub func collide(a, b &mut Entity)
+	match a, b
+		case &Circle, &Circle
+		case &Mesh, &Mesh
+		case &Circle, &Mesh
+		case &Mesh, &Circle
+	end
+end
+
+pub func to[string](vector &Vector) string
+	return f"({vector.x}, {vector.y})"
+end
+
+
+
+
+pub package lexer
+
+pub struct Token
+	pub type TokenType
+	pub text string
+end
+
+pub struct TokenType cases
+	invalidToken
+	number
+	identifier
+	keyword
+	operator
+end
+
+pub func lex(text string) owned []mut Token end
+
+struct Lexer
+	tokens []Token
+	index usize
+end
+
+
+pub package parser
+import
+	lexer.*
+end
+
+pub struct Tree
+	nodes owned []mut Node
+end
+
+pub struct Node
+	pub type NodeType
+	pub child &Node
+	pub sibling &Node
+end
+
+pub struct NodeType cases
+	invalidSyntax
+	program
+	packageStatement
+	...
+end
+
+## Uses the default implementation.
+pub func &nodes(tree &Tree) &weak []Node end
+
+pub func parse(tokens []Token) Node
+	var parser mut = Parser(tokens)
+	return parseExpression(&parser, 0)
+end
+
+struct parser
+	tokens []Token
+	index usize
+end
+
+
+
+&int32
+[]int32
+func(int32, string) bool
+[3]int32
+(int32, string)
+map[string, int32]
+set[string]
+
+var a [3]int32 = {1, 2, 3}
+var b (int32, string) = {1, "a"}
+var c map[string, int32] = {"a" = 1}
+var d = Person{"Doug", 25}
+var e = [][]{{1, 2}, {3, 4}}
+var f = [][]any[int32, string]{{"a", 2}, {3, "b"}}
+var g = map[string, int32]{"a" = 1}
+var h = map{"a" = 1}
+[]{1, 2, 3, 4} # array literal
+&[]{1, 2, 3, 4}[1...2] # slice
+&[]{1, 2, 3, 4} # slice
+var slice owned []int32 = new [10]int32{}
