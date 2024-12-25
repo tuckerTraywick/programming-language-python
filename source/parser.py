@@ -1,3 +1,4 @@
+# TODO: Make a separate ParsingError type to encode errors instead of representing them as nodes.
 from lexer import *
 
 # A node in the parse tree.
@@ -8,14 +9,14 @@ class Node:
 
 	def __init__(self, type: str, *children: "Node | Token"):
 		self.type = type
-		self.children = children
+		self.children = list(children)
 
-	def __str__(self) -> str:
+	def __repr__(self) -> str:
 		# If the node is an error, don't print its children.
-		if self.type.endswith("."):
-			return f"Parsing error: {self.type}"
+		if self.type == "error":
+			return f"Parsing error: {self.children[0]}"
 		return f"{self.type}({', '.join(map(str, self.children))})"
-	
+
 	# Prints a readable multi-line representation of the node and its children.
 	def prettyPrint(self, indentation: int=0) -> str:
 		print(indentation*"| " + self.type)
@@ -24,6 +25,10 @@ class Node:
 
 		for child in self.children:
 			child.prettyPrint(indentation + 1)
+
+	# Returns true if the node contains something.
+	def hasData(self) -> bool:
+		return bool(self.type or self.children)
 
 # Matches the type or text of a single token.
 class Match:
@@ -49,19 +54,30 @@ class Sequence:
 		self.parsers = parsers
 
 	def parse(self, tokens, index):
-		if index >= len(tokens):
-			return (None, index)
-		
 		result = []
 		for parser in self.parsers:
 			node, index = parser.parse(tokens, index)
-			if not node:
+			if node is None:
 				return (None, index)
-
-			# Don't append empty nodes given by `Maybe` or `Repeat0`.
-			if node.type != "":
+			
+			if isinstance(node, list):
+				result += node
+			elif isinstance(node, (Token, Error)) or node.hasData():
 				result.append(node)
 		return (result, index)
+
+# Matches one of many cases. Tries each case in order and backtracks when a case fails.
+class Choice:
+	def __init__(self, *parsers):
+		assert parsers, "You can't have an empty choice."
+		self.parsers = parsers
+
+	def parse(self, tokens, index):
+		for parser in self.parsers:
+			result, newIndex = parser.parse(tokens, index)
+			if result:
+				return (result, newIndex)
+		return (None, index)
 
 # Matches 0 or 1 occurrence of an item. Returns an empty node if it doesn't find a match.
 class Maybe:
@@ -73,6 +89,52 @@ class Maybe:
 		if result is None:
 			return (Node(""), index)
 		return (result, index)
+
+# Matches 0 or more occurrences of an item. Returns an empty list if no matches were found.
+class Repeat0:
+	def __init__(self, parser):
+		self.parser = parser
+
+	def parse(self, tokens, index):
+		result = []
+		node, index = self.parser.parse(tokens, index)
+		while node is not None:
+			if isinstance(node, list):
+				result += node
+			elif isinstance(node, (Token, Error)) or node.hasData():
+				result.append(node)
+			node, index = self.parser.parse(tokens, index)
+		return (result, index)
+
+# Matches 1 or more occurrences of an item.
+class Repeat1:
+	def __init__(self, parser):
+		self.parser = parser
+
+	def parse(self, tokens, index):
+		result = []
+		node, newIndex = self.parser.parse(tokens, index)
+		while node is not None:
+			if isinstance(node, list):
+				result += node
+			elif isinstance(node, (Token, Error)) or node.hasData():
+				result.append(node)
+			node, newIndex = self.parser.parse(tokens, newIndex)
+		
+		# Backtrack if no matches were found.
+		if result:
+			return (result, newIndex)
+		else:
+			return (None, index)
+
+class Error:
+	def __init__(self, message):
+		self.message = message
+
+	def parse(self, tokens, index):
+		return (Node("error", self.message), index)
+
+
 
 def parse(tokens, parser):
 	return parser.parse(tokens, 0)[0]

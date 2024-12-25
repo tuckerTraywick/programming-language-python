@@ -6,7 +6,7 @@ class Token:
 	type: str = ""
 	text: str = ""
 
-	def __str__(self) -> str:
+	def __repr__(self) -> str:
 		# If the token is an error, print the error message.
 		if self.type.endswith("."):
 			return f"Lexing error: {self.type} `{self.text}`"
@@ -59,7 +59,7 @@ def lex(text: str) -> list[Token]:
 		# Lex numbers.
 		elif text[i].isdigit():
 			currentToken.type = "number"
-			while i < len(text) and text[i].isdigit() or text[i] == "_":
+			while i < len(text) and (text[i].isdigit() or text[i] == "_"):
 				currentToken.text += text[i]
 				i += 1
 			tokens.append(currentToken)
