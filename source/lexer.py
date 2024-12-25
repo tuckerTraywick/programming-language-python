@@ -14,6 +14,13 @@ class Token:
 	
 	def prettyPrint(self, indentation: int=0) -> str:
 		print(indentation*"| " + str(self))
+
+	def match(self, type: str, text: str) -> bool:
+		if type and self.type != type:
+			return False
+		if text and self.text != text:
+			return False
+		return True
  
 # Splits text into tokens.
 def lex(text: str) -> list[Token]:

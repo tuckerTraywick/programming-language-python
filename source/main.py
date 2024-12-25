@@ -1,10 +1,10 @@
 from lexer import *
 from parser import *
 
-parser = Sequence(Match(type="identifier"), Choice(Match(type="identifier"), Error("Expected an identifier.")))
+parser = Sequence(Recover("error", text=";"), Match(type="identifier"))
 
 if __name__ == "__main__":
-	text = "a a"
+	text = "1 ; a"
 	
 	print("---- TOKENS ----")
 	tokens = lex(text)

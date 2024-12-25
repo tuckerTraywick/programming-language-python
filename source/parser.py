@@ -127,6 +127,7 @@ class Repeat1:
 		else:
 			return (None, index)
 
+# Returns a node with a parsing error.
 class Error:
 	def __init__(self, message):
 		self.message = message
@@ -134,8 +135,24 @@ class Error:
 	def parse(self, tokens, index):
 		return (Node("error", self.message), index)
 
+# Returns a node with a parsing error and eats advances until it sees the given token.
+class Recover:
+	def __init__(self, message, type="", text="", consumeMatch=True):
+		self.message = message
+		self.type = type
+		self.text = text
+		self.consumeMatch = consumeMatch
 
+	def parse(self, tokens, index):
+		while index < len(tokens) and tokens[index].type != self.type and tokens[index].text != self.text:
+			index += 1
 
+		# Skip the last token if it matches.
+		if self.consumeMatch and index < len(tokens) and tokens[index].match(self.type, self.text):
+			index += 1
+		return (Node("error", self.message), index)
+
+# Parses tokens with the given parser. Returns a syntax tree.
 def parse(tokens, parser):
 	return parser.parse(tokens, 0)[0]
 
