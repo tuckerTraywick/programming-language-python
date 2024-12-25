@@ -1,0 +1,17 @@
+basicExpression
+	= +("[" ?expression "]" ?"mut") ?literal *(parenthesizedExpressionList | bracketedExpressionList | fieldAccess)
+	| literal *(parenthesizedExpressionList | bracketedExpressionList | fieldAccess)
+	| +(parenthesizedExpressionList | bracketedExpressionList | fieldAccess)
+
+parenthesizedExpressionList
+	= "(" *(expression ",") ?expression ")"
+
+bracketedExpressionList
+	= "[" *(expression ",") ?expression "]"
+
+bracedExpressionList
+	= "{" *(expression ",") ?expression "}"
+
+fieldAccess
+	= "." identifier
+

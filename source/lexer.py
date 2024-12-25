@@ -11,6 +11,9 @@ class Token:
 		if self.type.endswith("."):
 			return f"Lexing error: {self.type} `{self.text}`"
 		return f"{self.type} `{self.text}`"
+	
+	def prettyPrint(self, indentation: int=0) -> str:
+		print(indentation*"| " + str(self))
  
 # Splits text into tokens.
 def lex(text: str) -> list[Token]:
@@ -23,10 +26,26 @@ def lex(text: str) -> list[Token]:
 		"-",
 		"*",
 		"/",
+		"%",
+		"&",
+		"|",
 		"^",
+		"~",
+		"==",
+		"!=",
+		">=",
+		"<=",
+		">",
+		"<",
+		"=",
 		"(",
 		")",
-		"=",
+		"[",
+		"]",
+		"{",
+		"}",
+		",",
+		";",
 	}
 
 	tokens = []

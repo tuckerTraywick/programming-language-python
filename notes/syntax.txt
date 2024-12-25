@@ -1,227 +1,317 @@
-pub trait Animal {
-	pub name string
-	pub age uint32
+Structural typing? Would solve the ugly cases A... syntax. Would also eliminate the need to
+distinguish between structs and traits. Only exception to structural typing would be methods.
+
+() for construction and tuples
+[] for indexing and generics
+
+(int32, string)(1, "a") # Tuple
+[10]int32(1, 2, 3, [...9] = 0) # Array
+[string]int32(["a"] = 1, ["b"] = 2) # Map
+Dog(name = "fido") # Object
+LinkedList[int32](1, 2, 3) # Generic
+type{a int32, b string}(1, "a") # Anonymous type
+cases{int32, string}(1) # Anonymous union
+func(x int32) int32 => x + 1 # Anonymous function
+
+
+
+
+type Color {
+	r, g, b uint8
+} cases {
+	red = (255, 0, 0)
+	green = (0, 255, 0)
+	blue = (0, 0, 255)
 }
 
-pub method makeNoise(animal &Animal)
 
-pub struct Dog {
-	embed Animal
-	pub tag string
+func resultType() cases{int32, error}
+
+func combineInterfaces(x *type{Equality, Arithmetic, To[string]})
+
+func namedReturnValues() type{a int32, b string}
+
+
+
+
+pub package a
+
+pub type ThingA {
+	pub x int32
 }
 
-pub func makeNoise(dog &Dog) {}
+pub package b
+
+pub type ThingB {
+	pub x int32
+}
+
+pub func foo(b *ThingB) {}
+
+pub package main
+import {
+	a
+	b
+}
+
+pub func main() {
+	b.foo(a.ThingA())
+}
 
 
-
-
-
-
-
-
-
-
-## Single line comment.
-
-#(
-Multi
-line
-comment.
-)#
 
 
 pub package animals
-import
-	std.io.printLine
-end
+import {
+	std.io.*
+}
 
-pub trait Animal
+pub type Animal {
 	pub name string
 	pub age uint32
-end
+}
 
-pub method makeNoise(animal &Animal)
+pub method makeNoise(animal *Animal)
 
-pub struct Dog
-	embed Animal
+pub type Dog {
+	Animal
+	pub tag string
+}
+
+pub type Cat {
+	Animal
 	pub breed string
-end
+}
 
-pub struct Cat
-	embed Animal
-	pub breed string
-end
-
-func makeNoise(dog &Dog)
+pub func makeNoise(dog *Dog) {
 	printLine("woof")
-end
+}
 
-func makeNoise(cat &Cat)
+pub func makeNoise(cat *Cat) {
 	printLine("meow")
-end
+}
 
-func main()
-	var pet mut &Animal = &Dog{}
+pub func main() {
+	var pet mut *Animal = &Dog()
 	makeNoise(pet)
-	pet = &Cat{}
+	pet = &Cat()
 	pet->makeNoise()
-end
+}
 
 
 pub package moreAnimals
-import
+import {
+	std.io.*
 	animals.*
-end
+}
 
-pub struct Pet cases
-	embed Dog, Cat, ...
-end
+pub type Pet {
+	Animal
+}
 
-pub method walk(pet &Pet)
+pub method walk(pet *Pet)
 
-pub func walk(dog &Dog) end
+pub type Hamster {
+	Pet
+}
 
-pub func walk(cat &Cat) end
+pub func makeNoise(hamster *Hamster) {
+	printLine("squeak")
+}
 
+pub func walk(hamster *Hamster) {}
 
+pub func walk(dog *Dog) {}
 
-
-pub struct Color
-	pub r, g, b uint8
-cases
-	struct Rgb end
-	red = {255, 0, 0}
-	green = {0, 255, 0}
-	blue = {0, 0, 255}
-end
-
-pub trait any[type T..] cases
-	embed T
-end
-
-pub struct all[type T..]
-	embed T
-end
+pub func walk(cat *Cat) {}
 
 
 
 
 pub package physics
-import
-	std.math.sqrt
+import {
 	std.operations
-end
+}
 
-pub struct Entity
-	pub position, velocity, acceleration Vector
-cases
-	struct Circle
+pub type Entity {
+	pub position, velocity, acceleration
+} cases {
+	type Circle {
 		pub radius float64
-	end
+	}
 
-	struct Mesh
-		pub vertices owned []Vector
-	end
-end
+	type Mesh {
+		pub vertices []Vector
+	}
+}
 
-pub struct Vector
-	embed std.operations.Equality, .Arithmetic, .To[string]
+pub type Vector {
+	std.operations.To[string], .Equality, .Arithmetic
 	pub x, y float64
-end
+}
 
-pub func collide(a, b &mut Entity)
-	match a, b
-		case &Circle, &Circle
-		case &Mesh, &Mesh
-		case &Circle, &Mesh
-		case &Mesh, &Circle
-	end
-end
+pub func collide(a, b *mut Entity) {
+	switch *a, *b {
+		case Circle, Circle:
+		case Mesh, Mesh:
+		case Circle, Mesh:
+		case Mesh, Circle:
+	}
+}
 
-pub func to[string](vector &Vector) string
+pub func std.operations.to[string](vector *Vector) string {
 	return f"({vector.x}, {vector.y})"
-end
+}
 
 
 
 
 pub package lexer
 
-pub struct Token
+pub type Token {
 	pub type TokenType
 	pub text string
-end
+}
 
-pub struct TokenType cases
+pub type TokenType cases {
 	invalidToken
 	number
 	identifier
 	keyword
 	operator
-end
+}
 
-pub func lex(text string) owned []mut Token end
-
-struct Lexer
-	tokens []Token
-	index usize
-end
+pub func lex(text string) owned []mut Token
 
 
 pub package parser
-import
+import {
 	lexer.*
-end
+}
 
-pub struct Tree
+pub type Tree {
 	nodes owned []mut Node
-end
+}
 
-pub struct Node
+pub type Node {
 	pub type NodeType
-	pub child &Node
-	pub sibling &Node
-end
+	pub child *Node
+	pub sibling *Node
+}
 
-pub struct NodeType cases
+pub type NodeType cases {
 	invalidSyntax
 	program
 	packageStatement
 	...
-end
+}
 
-## Uses the default implementation.
-pub func &nodes(tree &Tree) &weak []Node end
+// Uses the default implementation.
+pub func *nodes(tree *Tree) *[]Node
 
 pub func parse(tokens []Token) Node
-	var parser mut = Parser(tokens)
-	return parseExpression(&parser, 0)
-end
-
-struct parser
-	tokens []Token
-	index usize
-end
 
 
 
-&int32
-[]int32
-func(int32, string) bool
-[3]int32
-(int32, string)
-map[string, int32]
-set[string]
 
-var a [3]int32 = {1, 2, 3}
-var b (int32, string) = {1, "a"}
-var c map[string, int32] = {"a" = 1}
-var d = Person{"Doug", 25}
-var e = [][]{{1, 2}, {3, 4}}
-var f = [][]any[int32, string]{{"a", 2}, {3, "b"}}
-var g = map[string, int32]{"a" = 1}
-var h = map{"a" = 1}
-[]{1, 2, 3, 4} # array literal
-&[]{1, 2, 3, 4}[1...2] # slice
-&[]{1, 2, 3, 4} # slice
-var slice owned []int32 = new [10]int32{}
+package numberGuesser
+import {
+	std.io.printLine, .inputLine
+	std.math.random
+}
+
+pub func main() {
+	printLine("I'm thinking of a number between 1 and 100. What is it?\n")
+	var number = random[int32](1, 100)
+	while true {
+		var guessString = inputLine("guess: ")
+		var guess cases{uint32, error} = guessString->to[uint32]()
+		
+		if guess is not int32 {
+			printLine("Enter a number between 1 and 100.")
+		} else if guess == number {
+			printLine("Correct! You win!")
+			break
+		} else {
+			printLine("Incorrect. Guess again.")
+		}
+	}
+}
+
+
+
+
+pub package shapes
+import {
+	std.io.printLine
+	std.math.pi, .pow
+}
+
+pub type Shape cases {
+	type Circle {
+		pub radius float64
+	}
+
+	type Triangle {
+		pub base, height float64
+	}
+
+	type Rectangle {
+		pub width, height float64
+	}
+}
+
+pub method area(shape *Shape) float64
+
+pub func area(circle Circle) float64 {
+	return pi*pow(circle.radius, 2)
+}
+
+pub func area(triangle Triangle) float64 {
+	return 0.5*triangle.base*triangle.height
+}
+
+pub func area(rectangle Rectangle) float64 {
+	return rectangle.width*rectangle.height
+}
+
+pub func main() {
+	var shape mut Shape = Circle()
+	printLine(area(shape))
+	shape = Rectangle()
+	printLine(shape->area())
+}
+
+
+
+
+package chess
+
+type Board = [8][8]char
+
+var keepRunning mut = true
+var turn uint32 mut
+
+pub func main() {
+	var board mut Board
+	setupBoard(&board)
+	printWelcomeMessage()
+	while keepRunning {
+		printTurnMessage()
+	}
+}
+
+
+
+type Node {
+	type NodeType
+	children []any[Node, Token]
+}
+
+type ParseResult = any[Node, Token, none]
+
+func match(type, text) {
+	func parse(tokens, index) {
+		
+	}
+}

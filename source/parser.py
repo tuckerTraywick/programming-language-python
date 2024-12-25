@@ -17,18 +17,70 @@ class Node:
 		return f"{self.type}({', '.join(map(str, self.children))})"
 	
 	# Prints a readable multi-line representation of the node and its children.
-	def prettyPrint(self, indentation=0) -> str:
+	def prettyPrint(self, indentation: int=0) -> str:
 		print(indentation*"| " + self.type)
 		if self.type.endswith("."):
 			return
 
 		for child in self.children:
-			if isinstance(child, Token):
-				print((indentation + 1)*"| " + str(child))
-			else:
-				child.prettyPrint(indentation + 1)
+			child.prettyPrint(indentation + 1)
+
+# Matches the type or text of a single token.
+class Match:
+	def __init__(self, type="", text=""):
+		self.type = type
+		self.text = text
+
+	def parse(self, tokens, index):
+		if index >= len(tokens):
+			return (None, index)
+		
+		token = tokens[index]
+		if self.type and token.type != self.type:
+			return (None, index)
+		if self.text and token.text != self.text:
+			return (None, index)
+		return (token, index + 1)
+
+# Matches a sequence of items.
+class Sequence:
+	def __init__(self, *parsers):
+		assert parsers, "You can't have an empty sequence."
+		self.parsers = parsers
+
+	def parse(self, tokens, index):
+		if index >= len(tokens):
+			return (None, index)
+		
+		result = []
+		for parser in self.parsers:
+			node, index = parser.parse(tokens, index)
+			if not node:
+				return (None, index)
+
+			# Don't append empty nodes given by `Maybe` or `Repeat0`.
+			if node.type != "":
+				result.append(node)
+		return (result, index)
+
+# Matches 0 or 1 occurrence of an item. Returns an empty node if it doesn't find a match.
+class Maybe:
+	def __init__(self, parser):
+		self.parser = parser
+
+	def parse(self, tokens, index):
+		result, index = self.parser.parse(tokens, index)
+		if result is None:
+			return (Node(""), index)
+		return (result, index)
+
+def parse(tokens, parser):
+	return parser.parse(tokens, 0)[0]
 
 
+
+
+"""
 # Contains the state of the parser.
 class Parser:
 	tokens: list[Token] = []
@@ -89,12 +141,21 @@ class Parser:
 	# Parses an infix expression.
 	def parseInfix(self, precedence: int) -> Node:
 		precedences = {
-			"^": 40,
-			"*": 30,
-			"/": 30,
-			"+": 20,
-			"-": 20,
-			"=": 10,
+			"+",
+			"-",
+			"*",
+			"/",
+			"%",
+			"&",
+			"|",
+			"^",
+			"~",
+			"==",
+			"!=",
+			">=",
+			"<=",
+			">",
+			"<",
 		}
 		
 		# Parse the first operand.
@@ -142,9 +203,15 @@ class Parser:
 	# Parses a parenthesized expression.
 	def parseParenthesizedExpression(self) -> Node:
 		if self.accept(text="("):
-			expression = self.parseInfix(0)
+			children = [self.parseInfix(0)]
+			while self.accept(text=","):
+				child = self.parseInfix(0)
+				if not child:
+					break
+				children.append(child)
+
 			if self.accept(text=")"):
-				return expression
+				return Node("comma list", *children) if len(children) > 1 else children[0]
 			# TODO: Do better error handling here.
 			return Node("Expected `)`.")
 		return None
@@ -152,3 +219,4 @@ class Parser:
 # Turns a list of tokens into a syntax tree.
 def parse(tokens: list[Token]) -> Node:
 	return Parser().parse(tokens)
+"""
