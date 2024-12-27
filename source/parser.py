@@ -36,7 +36,7 @@ class Match:
 		self.type = type
 		self.text = text
 
-	def parse(self, tokens, index):
+	def parse(self, tokens, index, parser):
 		if index >= len(tokens):
 			return (None, index)
 		
@@ -53,10 +53,10 @@ class Sequence:
 		assert parsers, "You can't have an empty sequence."
 		self.parsers = parsers
 
-	def parse(self, tokens, index):
+	def parse(self, tokens, index, parser):
 		result = []
 		for parser in self.parsers:
-			node, index = parser.parse(tokens, index)
+			node, index = parser.parse(tokens, index, parser)
 			if node is None:
 				return (None, index)
 			
@@ -72,9 +72,9 @@ class Choice:
 		assert parsers, "You can't have an empty choice."
 		self.parsers = parsers
 
-	def parse(self, tokens, index):
+	def parse(self, tokens, index, parser):
 		for parser in self.parsers:
-			result, newIndex = parser.parse(tokens, index)
+			result, newIndex = parser.parse(tokens, index, parser)
 			if result:
 				return (result, newIndex)
 		return (None, index)
@@ -84,8 +84,8 @@ class Maybe:
 	def __init__(self, parser):
 		self.parser = parser
 
-	def parse(self, tokens, index):
-		result, index = self.parser.parse(tokens, index)
+	def parse(self, tokens, index, parser):
+		result, index = self.parser.parse(tokens, index, parser)
 		if result is None:
 			return (Node(""), index)
 		return (result, index)
@@ -95,15 +95,15 @@ class Repeat0:
 	def __init__(self, parser):
 		self.parser = parser
 
-	def parse(self, tokens, index):
+	def parse(self, tokens, index, parser):
 		result = []
-		node, index = self.parser.parse(tokens, index)
+		node, index = self.parser.parse(tokens, index, parser)
 		while node is not None:
 			if isinstance(node, list):
 				result += node
 			elif isinstance(node, (Token, Error)) or node.hasData():
 				result.append(node)
-			node, index = self.parser.parse(tokens, index)
+			node, index = self.parser.parse(tokens, index, parser)
 		return (result, index)
 
 # Matches 1 or more occurrences of an item.
@@ -111,15 +111,15 @@ class Repeat1:
 	def __init__(self, parser):
 		self.parser = parser
 
-	def parse(self, tokens, index):
+	def parse(self, tokens, index, parser):
 		result = []
-		node, newIndex = self.parser.parse(tokens, index)
+		node, newIndex = self.parser.parse(tokens, index, parser)
 		while node is not None:
 			if isinstance(node, list):
 				result += node
 			elif isinstance(node, (Token, Error)) or node.hasData():
 				result.append(node)
-			node, newIndex = self.parser.parse(tokens, newIndex)
+			node, newIndex = self.parser.parse(tokens, newIndex, parser)
 		
 		# Backtrack if no matches were found.
 		if result:
@@ -132,7 +132,7 @@ class Error:
 	def __init__(self, message):
 		self.message = message
 
-	def parse(self, tokens, index):
+	def parse(self, tokens, index, parser):
 		return (Node("error", self.message), index)
 
 # Returns a node with a parsing error and eats advances until it sees the given token.
@@ -143,7 +143,7 @@ class Recover:
 		self.text = text
 		self.consumeMatch = consumeMatch
 
-	def parse(self, tokens, index):
+	def parse(self, tokens, index, parser):
 		while index < len(tokens) and tokens[index].type != self.type and tokens[index].text != self.text:
 			index += 1
 
@@ -152,11 +152,49 @@ class Recover:
 			index += 1
 		return (Node("error", self.message), index)
 
-# Parses tokens with the given parser. Returns a syntax tree.
-def parse(tokens, parser):
-	return parser.parse(tokens, 0)[0]
+# Parses an expression with the given operator precedences.
+class Expression:
+	def __init__(self, basicParser, prefixOperators, infixOperators):
+		self.basicParser = basicParser
+		self.prefixOperators = prefixOperators
+		self.infixOperators = infixOperators
 
+	def parse(self, tokens, index, parser):
+		result, index = self.basicParser(tokens, index, parser)
 
+# Matches another parsing rule.
+class Nonterminal:
+	def __init__(self, rule):
+		self.rule = rule
+
+	def parse(self, tokens, index, parser):
+		return parser.rules[self.rule].parse(tokens, index, parser)
+
+# Wraps the result of a parser in a node.
+class Wrap:
+	def __init__(self, head, parser):
+		self.head = head
+		self.parser = parser
+
+	def parse(self, tokens, index, parser):
+		result, index = self.parser.parse(tokens, index, parser)
+		if result is None:
+			return (result, index)
+		if isinstance(result, list):
+			return (Node(self.head, *result), index)
+		if isinstance(result, Node) and not result.hasData():
+			return (Node(self.head), index)
+		return (Node(self.head, result), index)
+
+# A parser with a set of mutually recursive rules.
+class Parser:
+	def __init__(self, startRule, rules):
+		self.startRule = startRule
+		self.rules = rules
+
+	def parse(self, tokens, index=0):
+		result, _ = self.rules[self.startRule].parse(tokens, index, self)
+		return result
 
 
 """
