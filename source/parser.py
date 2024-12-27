@@ -55,8 +55,8 @@ class Sequence:
 
 	def parse(self, tokens, index, parser):
 		result = []
-		for parser in self.parsers:
-			node, index = parser.parse(tokens, index, parser)
+		for element in self.parsers:
+			node, index = element.parse(tokens, index, parser)
 			if node is None:
 				return (None, index)
 			
@@ -73,8 +73,8 @@ class Choice:
 		self.parsers = parsers
 
 	def parse(self, tokens, index, parser):
-		for parser in self.parsers:
-			result, newIndex = parser.parse(tokens, index, parser)
+		for choice in self.parsers:
+			result, newIndex = choice.parse(tokens, index, parser)
 			if result:
 				return (result, newIndex)
 		return (None, index)
@@ -159,8 +159,36 @@ class Expression:
 		self.prefixOperators = prefixOperators
 		self.infixOperators = infixOperators
 
-	def parse(self, tokens, index, parser):
-		result, index = self.basicParser(tokens, index, parser)
+	def parsePrefixExpression(self, tokens, index, parser):
+		if index < len(tokens) and tokens[index].text in self.prefixOperators:
+			precedence = self.prefixOperators[tokens[index].text] + 1
+			children = [tokens[index]]
+			index += 1
+			result, index = self.parse(tokens, index, parser, precedence)
+			if result is None:
+				return (result, index)
+			children.append(result)
+			return (Node("prefix expression", *children), index)
+		return self.basicParser.parse(tokens, index, parser)
+
+	def parse(self, tokens, index, parser, precedence=0):
+		result, index = self.parsePrefixExpression(tokens, index, parser)
+		if result is None:
+			return (result, index)
+		
+		children = [result]
+		while index < len(tokens) and self.infixOperators.get(tokens[index].text, -1) >= precedence:
+			nextPrecedence = self.infixOperators[tokens[index].text] + 1
+			children.append(tokens[index])
+			index += 1
+			result, index = self.parse(tokens, index, parser, nextPrecedence)
+			if result is None:
+				return (Node("error", "Expected operand for infix operator."), index)
+			children.append(result)
+
+		if len(children) > 1:
+			return (Node("infix expression", *children), index)
+		return (children[0], index)
 
 # Matches another parsing rule.
 class Nonterminal:

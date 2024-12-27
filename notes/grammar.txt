@@ -14,4 +14,3 @@ bracedExpressionList
 
 fieldAccess
 	= "." identifier
-
