@@ -30,8 +30,16 @@ class Node:
 	def hasData(self) -> bool:
 		return bool(self.type or self.children)
 
+# Base class for all parser combinators. Overloads operators.
+class Combinator:
+	def __add__(self, other):
+		return Sequence(self, other)
+	
+	def __or__(self, other):
+		return Choice(self, other)
+
 # Matches the type or text of a single token.
-class Match:
+class Match(Combinator):
 	def __init__(self, type="", text=""):
 		self.type = type
 		self.text = text
@@ -48,10 +56,16 @@ class Match:
 		return (token, index + 1)
 
 # Matches a sequence of items.
-class Sequence:
+class Sequence(Combinator):
 	def __init__(self, *parsers):
 		assert parsers, "You can't have an empty sequence."
-		self.parsers = parsers
+		self.parsers = []
+		# Flatten nested sequences.
+		for parser in parsers:
+			if isinstance(parser, Sequence):
+				self.parsers += parser.parsers
+			else:
+				self.parsers.append(parser)
 
 	def parse(self, tokens, index, parser):
 		result = []
@@ -67,10 +81,16 @@ class Sequence:
 		return (result, index)
 
 # Matches one of many cases. Tries each case in order and backtracks when a case fails.
-class Choice:
+class Choice(Combinator):
 	def __init__(self, *parsers):
 		assert parsers, "You can't have an empty choice."
-		self.parsers = parsers
+		self.parsers = []
+		# Flatten nested choices.
+		for parser in parsers:
+			if isinstance(parser, Choice):
+				self.parsers += parser.parsers
+			else:
+				self.parsers.append(parser)
 
 	def parse(self, tokens, index, parser):
 		for choice in self.parsers:
@@ -80,7 +100,7 @@ class Choice:
 		return (None, index)
 
 # Matches 0 or 1 occurrence of an item. Returns an empty node if it doesn't find a match.
-class Maybe:
+class Maybe(Combinator):
 	def __init__(self, parser):
 		self.parser = parser
 
@@ -91,7 +111,7 @@ class Maybe:
 		return (result, index)
 
 # Matches 0 or more occurrences of an item. Returns an empty list if no matches were found.
-class Repeat0:
+class Repeat0(Combinator):
 	def __init__(self, parser):
 		self.parser = parser
 
@@ -107,7 +127,7 @@ class Repeat0:
 		return (result, index)
 
 # Matches 1 or more occurrences of an item.
-class Repeat1:
+class Repeat1(Combinator):
 	def __init__(self, parser):
 		self.parser = parser
 
@@ -128,7 +148,7 @@ class Repeat1:
 			return (None, index)
 
 # Returns a node with a parsing error.
-class Error:
+class Error(Combinator):
 	def __init__(self, message):
 		self.message = message
 
@@ -136,7 +156,7 @@ class Error:
 		return (Node("error", self.message), index)
 
 # Returns a node with a parsing error and eats advances until it sees the given token.
-class Recover:
+class Recover(Combinator):
 	def __init__(self, message, type="", text="", consumeMatch=True):
 		self.message = message
 		self.type = type
@@ -153,7 +173,7 @@ class Recover:
 		return (Node("error", self.message), index)
 
 # Parses an expression with the given operator precedences.
-class Expression:
+class Expression(Combinator):
 	def __init__(self, basicParser, prefixOperators, infixOperators):
 		self.basicParser = basicParser
 		self.prefixOperators = prefixOperators
@@ -191,7 +211,7 @@ class Expression:
 		return (children[0], index)
 
 # Matches another parsing rule.
-class Nonterminal:
+class Nonterminal(Combinator):
 	def __init__(self, rule):
 		self.rule = rule
 
@@ -199,7 +219,7 @@ class Nonterminal:
 		return parser.rules[self.rule].parse(tokens, index, parser)
 
 # Wraps the result of a parser in a node.
-class Wrap:
+class Wrap(Combinator):
 	def __init__(self, head, parser):
 		self.head = head
 		self.parser = parser
@@ -223,145 +243,3 @@ class Parser:
 	def parse(self, tokens, index=0):
 		result, _ = self.rules[self.startRule].parse(tokens, index, self)
 		return result
-
-
-"""
-# Contains the state of the parser.
-class Parser:
-	tokens: list[Token] = []
-	i: int = 0
-
-	# Returns the next token if there are any left and None if there aren't.
-	@property
-	def nextToken(self) -> Token:
-		if self.hasToken():
-			return self.tokens[self.i]
-		return None
-	
-	# Returns the previous token if there was one.
-	@property
-	def lastToken(self) -> Token:
-		if self.i > 0:
-			return self.tokens[self.i - 1]
-		return None
-	
-	# Returns true if the parser still has a token to parse.
-	def hasToken(self) -> bool:
-		return self.i < len(self.tokens)
-	
-	# Returns true if the next token matches the type and/or text.
-	def peek(self, type: str=None, text: str=None) -> bool:
-		next = self.nextToken
-		# TODO: Maybe make this multiple if statements.
-		return next and (not type or next.type == type) and (not text or next.text == text)
-
-	# Consumes the next token and returns it if it matches the type and/or text. Returns None if it
-	# doesn't.
-	def accept(self, type: str=None, text: str=None) -> Token:
-		next = self.nextToken
-		if self.peek(type, text):
-			self.i += 1
-			return next
-		return None
-
-	# Consumes the next token and returns it if it matches the type and/or text. Returns an error if
-	# it doesn't.
-	def expect(self, type: str=None, text: str=None) -> Node | Token:
-		next = self.nextToken
-		if self.peek(type, text):
-			self.i += 1
-			return next
-		
-		message = f"Expected {type}."
-		if text:
-			message = f"Expected `{type}`."
-		return Node(message)
-	
-	# Initializes the parser and parses a list of tokens.
-	def parse(self, tokens: list[Token]) -> Node:
-		self.tokens = tokens
-		self.i = 0
-		return self.parseInfix(0)
-	
-	# Parses an infix expression.
-	def parseInfix(self, precedence: int) -> Node:
-		precedences = {
-			"+",
-			"-",
-			"*",
-			"/",
-			"%",
-			"&",
-			"|",
-			"^",
-			"~",
-			"==",
-			"!=",
-			">=",
-			"<=",
-			">",
-			"<",
-		}
-		
-		# Parse the first operand.
-		left = self.parseBasic()
-		if not left:
-			return None
-		
-		# Keep parsing operands while the next operator is >= the minimum precedence.
-		children = [left]
-		while self.peek(type="operator") and self.nextToken.text in precedences and precedences[self.nextToken.text] >= precedence:
-			children.append(self.accept())
-			right = self.parseInfix(precedences[self.lastToken.text] + 1)
-			if not right:
-				children.append(Node("Expected operand for infix operator."))
-				break
-			children.append(right)
-
-		if len(children) > 1:
-			return Node("infix expression", *children)
-		return children[0]
-	
-	# Parses an atom or a parenthesized expression.
-	def parseBasic(self) -> Node:
-		# Parse numbers.
-		if self.peek(type="number"):
-			return Node("atom", self.accept())
-		
-		# Parse identifiers.
-		result = None
-		if self.peek(type="identifier"):
-			result = Node("atom", self.accept())
-
-		# Parse tuples or function call arguments.
-		while self.peek(text="("):
-			parenthesized = self.parseParenthesizedExpression()
-			if not parenthesized:
-				return None
-			
-			if result:
-				result = Node("function call", result, parenthesized)
-			else:
-				result = parenthesized
-		return result
-
-	# Parses a parenthesized expression.
-	def parseParenthesizedExpression(self) -> Node:
-		if self.accept(text="("):
-			children = [self.parseInfix(0)]
-			while self.accept(text=","):
-				child = self.parseInfix(0)
-				if not child:
-					break
-				children.append(child)
-
-			if self.accept(text=")"):
-				return Node("comma list", *children) if len(children) > 1 else children[0]
-			# TODO: Do better error handling here.
-			return Node("Expected `)`.")
-		return None
-
-# Turns a list of tokens into a syntax tree.
-def parse(tokens: list[Token]) -> Node:
-	return Parser().parse(tokens)
-"""
