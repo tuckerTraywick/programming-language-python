@@ -7,8 +7,8 @@ def type(name):
 def text(string):
 	return Match(text=string)
 
-def node(head, *choices):
-	return Wrap(head, Choice(*choices) if len(choices) > 1 else choices[0])
+def node(*choices):
+	return Wrap("", Choice(*choices) if len(choices) > 1 else choices[0])
 
 def any(*choices):
 	return Choice(*choices) if len(choices) > 1 else choices[0]
@@ -46,17 +46,26 @@ parser = Parser("expression", {
 		},
 	),
 
-	"basic": node("basic",
-		call("arrayDimensions") + maybe(type("identifier")) + rep0(call("parenthesizedExpressionList")),
-		call("literal"),
+	"basic": node(
+		rep1(call("arrayIndex")) + maybe(call("literal")) + rep0(call("functionArguments") | call("arrayIndex") | call("fieldAccess")),
+		call("literal") + rep0(call("functionArguments") | call("arrayIndex") | call("fieldAccess")),
+		rep1(call("functionArguments") | call("arrayIndex") | call("fieldAccess")),
 	),
 
-	"arrayDimensions": node("arrayDimensions",
-		rep1(text("[") + call("expression") + text("]")),
+	"arrayIndex": node(
+		text("[") + maybe(call("expression")) + text("]"),
 	),
 
-	"parenthesizedExpressionList": node("parenthesizedExpressionList",
-		text("(") + maybe(call("expression")) + rep0(text(",") + call("expression")) + text(")"),
+	"functionArguments": node(
+		text("(") + maybe(call("functionArgument")) + rep0(text(",") + call("functionArgument")) + text(")"),
+	),
+
+	"functionArgument": node(
+		maybe(type("identifier") + text("=")) + call("expression"),
+	),
+
+	"fieldAccess": node(
+		text(".") + type("identifier"),
 	),
 
 	"literal": any(
@@ -66,7 +75,7 @@ parser = Parser("expression", {
 })
 
 if __name__ == "__main__":
-	text = "[a][b]a"
+	text = "(List)[](1, 2, 3)()"
 	
 	print("---- TOKENS ----")
 	tokens = lex(text)

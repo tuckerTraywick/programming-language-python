@@ -95,7 +95,7 @@ class Choice(Combinator):
 	def parse(self, tokens, index, parser):
 		for choice in self.parsers:
 			result, newIndex = choice.parse(tokens, index, parser)
-			if result:
+			if result is not None:
 				return (result, newIndex)
 		return (None, index)
 
@@ -239,6 +239,9 @@ class Parser:
 	def __init__(self, startRule, rules):
 		self.startRule = startRule
 		self.rules = rules
+		for rule, parser in self.rules.items():
+			if isinstance(parser, Wrap):
+				parser.head = rule
 
 	def parse(self, tokens, index=0):
 		result, _ = self.rules[self.startRule].parse(tokens, index, self)

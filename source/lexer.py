@@ -51,6 +51,7 @@ def lex(text: str) -> list[Token]:
 		"]",
 		"{",
 		"}",
+		".",
 		",",
 		";",
 	}
