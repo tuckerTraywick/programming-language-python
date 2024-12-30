@@ -1,3 +1,19 @@
+expr
+	= infix(0)
+
+infix(p)
+	= prefix(p) *(infixOp(p) infix(q))
+
+prefix(p)
+	= prefixOp infix(q)
+	= basic
+
+basic
+	= "(" expr ")"
+	= number
+	= identifier
+
+
 basicExpression
 	= +("[" ?expression "]" ?"mut") ?literal *(parenthesizedExpressionList | bracketedExpressionList | fieldAccess)
 	| literal *(parenthesizedExpressionList | bracketedExpressionList | fieldAccess)

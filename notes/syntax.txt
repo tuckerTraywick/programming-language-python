@@ -20,13 +20,11 @@ If an existing type already has the methods for an existing trait in its scope, 
 [string]int32(["a"] = 1, ["b"] = 2) # Map
 Dog(name = "fido") # Object
 LinkedList[int32](1, 2, 3) # Generic
-struct{a int32, b string}(1, "a") # Anonymous struct
-cases{int32, string}(1) # Anonymous union
 func(x int32) int32 => x + 1 # Anonymous function
 
 
 struct Color {
-	r, g, b uint8
+	(r, g, b) uint8
 } cases {
 	red = (255, 0, 0)
 	green = (0, 255, 0)
@@ -72,6 +70,34 @@ import interface, implementation
 pub func main() {
 	var x *interface.Fooer = &implementation.Thing() // Allowed.
 }
+
+
+var (a, b) = ("a", 1)
+var (a, b) int32 = (1, 2)
+var (a, b int32) = ("a", 1)
+var (a string, b int32) = ("a", 1)
+
+for (a, b) in [](("a", 1), ("b", 2))
+for (a, b) int32 in []((1, 2), (3, 4))
+for (a, b int32) in [](("a", 1), ("b", 2))
+for (a string, b int32) in [](("a", 1), ("b", 2))
+
+// Body means argument name is the default. Same rule as variables.
+func(a, b) {a + b}
+func((a, b) int32) {a + b}
+func(a, b int32) {(a, b)}
+func(a string, b int32) {(a, b)}
+
+// No body means argument type is the default.
+func(int32, string)
+func(int32, b string)
+
+// Return tuples are always type by default.
+func() (int32, string)
+func() (int32, b string)
+
+printLine(x.a, .b)
+printLine((x.a, .b))
 
 
 

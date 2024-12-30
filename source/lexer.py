@@ -1,21 +1,19 @@
-from dataclasses import dataclass
-
 # A token or error given by the lexer.
-@dataclass
 class Token:
-	type: str = ""
-	text: str = ""
+	def __init__(self, type="", text=""):
+		self.type = type
+		self.text = text
 
-	def __repr__(self) -> str:
+	def __repr__(self):
 		# If the token is an error, print the error message.
 		if self.type.endswith("."):
 			return f"Lexing error: {self.type} `{self.text}`"
 		return f"{self.type} `{self.text}`"
 	
-	def prettyPrint(self, indentation: int=0) -> str:
+	def prettyPrint(self, indentation=0):
 		print(indentation*"| " + str(self))
 
-	def match(self, type: str, text: str) -> bool:
+	def match(self, type="", text=""):
 		if type and self.type != type:
 			return False
 		if text and self.text != text:
@@ -23,7 +21,7 @@ class Token:
 		return True
  
 # Splits text into tokens.
-def lex(text: str) -> list[Token]:
+def lex(text):
 	skip = " \t\r\n"
 	keywords = {
 		"package",
