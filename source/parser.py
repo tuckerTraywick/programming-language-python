@@ -14,10 +14,11 @@ class Node:
 
 	# Prints a readable multi-line representation of the node and its children.
 	def prettyPrint(self, indentation=0):
-		print(indentation*"| " + self.type)
-		if self.type.endswith("."):
+		if self.type == "error":
+			print(indentation*"| " + self.children[0])
 			return
-
+		
+		print(indentation*"| " + self.type)
 		for child in self.children:
 			child.prettyPrint(indentation + 1)
 
@@ -79,7 +80,8 @@ class Parser:
 		self.currentNode.children.append(leaf)
 
 	def backtrack(self, message=""):
-		self.endNode()
+		self.tokenIndexStack.pop()
+		self.currentNodeStack.pop()
 		self.currentNode.children.pop()
 		if message:
 			return self.emitError(message)
@@ -90,14 +92,22 @@ class Parser:
 		self.currentNode.children.append(error)
 		return Node("error", message)
 	
-	def recover(self, type="", text="", message=""):
+	def recover(self, message="", type="", text=""):
 		# Skip tokens.
 		while self.hasTokens() and not self.peek(type, text):
 			self.advance()
 
-		if self.peek(type, text):
-			self.advance()
+		# if self.peek(type, text):
+		# 	self.advance()
 		return self.emitError(message)
+	
+	def recoverNode(self, message="", type="", text=""):
+		self.recover(message, type, text)
+		return self.endNode()
+
+	def recoverSequence(self, message="", type="", text=""):
+		self.recover(message, type, text)
+		return self.endSequence()
 
 	def advance(self):
 		if self.hasTokens():
@@ -118,11 +128,16 @@ class Parser:
 
 	def parse(self, tokens):
 		self.reset(tokens)
-		self.parseExpression()
-		self.parseExpression()
+		self.parseBasic()
 		return self.tree
 	
-	def parseExpression(self):
-		self.beginNode("expression")
-		if not self.consume("identifier"): return self.recover(text=";", message="Expected an expression.") and self.endNode()
+	def parseBasic(self):
+		self.beginNode("basic")
+		while self.consume(text="["):
+			if not self.parseBasic(): return self.recoverNode("Expected a basic expression.", text=";")
+			if not self.consume(text="]"): return self.recoverNode("Expected a closing `]`.", text=";")
+
+		self.consume("number")
+		if not self.currentNode.children:
+			return self.recoverNode("Expected a basic expression.", text=";")
 		return self.endNode()

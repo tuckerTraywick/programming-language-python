@@ -4,7 +4,7 @@ from parser import *
 parser = Parser()
 
 if __name__ == "__main__":
-	text = "1 ; a"
+	text = "[[1][2]; 1 3"
 	
 	print("---- TOKENS ----")
 	tokens = lex(text)
@@ -12,6 +12,7 @@ if __name__ == "__main__":
 
 	print("\n---- SYNTAX TREE ----")
 	tree = parser.parse(tokens)
-	print(tree)
+	tree.prettyPrint()
+	print()
 	print(parser.currentNodeStack)
 	print(parser.tokenIndexStack)

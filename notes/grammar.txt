@@ -9,13 +9,11 @@ prefix(p)
 	= basic
 
 basic
-	= "(" expr ")"
-	= number
-	= identifier
+	= *("[" ?expr "]") literal *("(" ?expr *("," expr) ")")
 
 
 basicExpression
-	= +("[" ?expression "]" ?"mut") ?literal *(parenthesizedExpressionList | bracketedExpressionList | fieldAccess)
+	= +("[" ?expression "]") ?literal *(parenthesizedExpressionList | bracketedExpressionList | fieldAccess)
 	| literal *(parenthesizedExpressionList | bracketedExpressionList | fieldAccess)
 	| +(parenthesizedExpressionList | bracketedExpressionList | fieldAccess)
 

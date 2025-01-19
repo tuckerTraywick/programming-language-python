@@ -14,6 +14,14 @@ Trait methods are implemented in the same scope they're defined or in the scope 
 implementing them.
 If an existing type already has the methods for an existing trait in its scope, it implements it.
 
+What determines whether a type A implements type B's methods?
+- Function definitions in A's package
+- Function definitions in B's package
+Methods and implementations must be in A or B's package.
+
+Types can be by reference or by value. You can't construct by reference types and they must be
+referred to behind a pointer. You can make methods for reference types or case value types.
+
 
 (int32, string)(1, "a") # Tuple
 [10]int32(1, 2, 3, [thru 9] = 0) # Array
@@ -23,8 +31,12 @@ LinkedList[int32](1, 2, 3) # Generic
 func(x int32) int32 => x + 1 # Anonymous function
 
 
-struct Color {
-	(r, g, b) uint8
+
+
+
+
+type Color {
+	r, g, b uint8
 } cases {
 	red = (255, 0, 0)
 	green = (0, 255, 0)
@@ -32,8 +44,8 @@ struct Color {
 }
 
 
-func takesType[type T]()
-func takesStruct[struct T]()
+func takesValueType[type T]()
+func takesReferenceType[type *T]()
 func takesFunc[func f(x int32) int32]()
 func takesValue[X int32]()
 func takesSpecificType[string]()
@@ -41,35 +53,38 @@ func takesSpecificValue[0]()
 func typeConstraint[type T < To[string]]()
 
 
-func resultType() struct cases{int32, error}
-func combineInterfaces(x *trait{Equality, Arithmetic, To[string]})
-func namedReturnValues() struct{a int32, b string}
+func resultType() any[int32, error]
+func combineInterfaces(x *all[Equality, Arithmetic, To[string]])
 
 
-struct HasTag cases {string, int32}
-trait NoTag cases {int32, string}
+type HasTag cases {string, int32}
+type *NoTag cases {int32, string}
 var tag HasTag = 1
 var noTag mut *NoTag = &1
 noTag = &tag // Valid. Structs implement traits with identical cases.
 
 
 pub package interface
-pub trait Fooer {
-	pub foo(*this)
-}
+pub type *Fooer
+pub func foo(fooer *Fooer)
 
 pub package implementation
-// Doesn't have to explicitly embed Fooer.
-pub struct Thing {
+// You don't have to explicitly embed Fooer or import interface.
+pub type Thing {
 	x int32
 }
-pub foo(thing *Thing) {}
+pub func foo(thing *Thing) {}
 
 pub package main
-import interface, implementation
+import {
+	interface
+	implementation
+}
 pub func main() {
 	var x *interface.Fooer = &implementation.Thing() // Allowed.
 }
+
+
 
 
 var (a, b) = ("a", 1)
@@ -91,7 +106,6 @@ func(a string, b int32) {(a, b)}
 // No body means argument type is the default.
 func(int32, string)
 func(int32, b string)
-
 // Return tuples are always type by default.
 func() (int32, string)
 func() (int32, b string)
@@ -104,18 +118,20 @@ printLine((x.a, .b))
 
 pub package animals
 
-pub trait Animal {
+// Reference type. Can have methods that take it by reference.
+pub type *Animal {
 	pub name string
 	pub age uint32
-	pub makeNoise(*this)
 }
 
-pub struct Dog {
+pub func makeNoise(animal *Animal)
+
+pub type Dog {
 	Animal
 	pub tag string
 }
 
-pub struct Cat {
+pub type Cat {
 	Animal
 	pub breed string
 }
@@ -130,12 +146,13 @@ import {
 	animals.*
 }
 
-pub trait Pet {
+pub type *Pet {
 	Animal
-	pub walk(*this)
 }
 
-pub struct Hamster {
+pub func walk(pet *Pet)
+
+pub type Hamster {
 	Pet
 }
 
@@ -155,19 +172,19 @@ import {
 	std.operations
 }
 
-pub struct Entity {
+pub type Entity {
 	pub position, velocity, acceleration
 } cases {
-	struct Circle {
+	type Circle {
 		pub radius float64
 	}
 
-	struct Mesh {
+	type Mesh {
 		pub vertices owned []Vector
 	}
 }
 
-pub struct Vector {
+pub type Vector {
 	std.operations.To[string], .Equality, .Arithmetic
 	pub x, y float64
 }
@@ -190,12 +207,12 @@ pub func to[string](vector *Vector) string {
 
 pub package lexer
 
-pub struct Token {
+pub type Token {
 	pub struct TokenType
 	pub text string
 }
 
-pub struct TokenType cases {
+pub type TokenType cases {
 	invalidToken
 	number
 	identifier
@@ -211,25 +228,25 @@ import {
 	lexer.*
 }
 
-pub struct Tree {
+pub type Tree {
 	nodes owned []mut Node
 }
 
-pub struct Node {
-	pub struct Nodestruct
+pub type Node {
+	pub type NodeType
 	pub child *Node
 	pub sibling *Node
 }
 
-pub struct Nodestruct cases {
+pub type NodeType cases {
 	invalidSyntax
 	program
 	packageStatement
 	...
 }
 
-// Uses the default implementation.
-pub func *nodes(tree *Tree) *[]Node
+// Uses the default implementation. => &tree.nodes
+pub func *nodes(tree *Tree) *[]Node {}
 
 pub func parse(tokens []Token) Node {}
 
@@ -244,12 +261,12 @@ import {
 
 pub func main() {
 	printLine("I'm thinking of a number between 1 and 100. What is it?\n")
-	var number = random[int32](1 thru 100)
+	var number = random[uint32](1 thru 100)
 	while true {
 		var guessString = inputLine("guess: ")
-		var guess struct cases{uint32, error} = guessString->to[uint32]()
+		var guess any[uint32, error] = guessString->to[uint32]()
 		
-		if guess is not int32 {
+		if guess is error {
 			printLine("Enter a number between 1 and 100.")
 		} else if guess == number {
 			printLine("Correct! You win!")
@@ -269,22 +286,22 @@ import {
 	std.math.pi, .pow
 }
 
-pub struct Shape {
-	// You can define methods on case structs.
-	pub func area(*this) float64
-} cases {
-	struct Circle {
+pub type Shape cases {
+	type Circle {
 		pub radius float64
 	}
 
-	struct Triangle {
+	type Triangle {
 		pub base, height float64
 	}
 
-	struct Rectangle {
+	type Rectangle {
 		pub width, height float64
 	}
 }
+
+// You can define methods by value on case types and they are dispatched using the discriminant.
+pub func area(shape Shape) float64
 
 pub func area(circle Circle) float64 {
 	return pi*pow(circle.radius, 2)
@@ -300,9 +317,9 @@ pub func area(rectangle Rectangle) float64 {
 
 pub func main() {
 	var shape mut Shape = Circle()
-	printLine(shape.area())
+	printLine(area(shape))
 	shape = Rectangle()
-	printLine(shape.area())
+	printLine(shape->area())
 }
 
 
@@ -310,10 +327,10 @@ pub func main() {
 
 package chess
 
-struct Board = [8][8]char
+type Board = [8][8]char
 
 var keepRunning mut = true
-var turn uint32 mut
+var turn mut uint32
 
 pub func main() {
 	var board mut Board
@@ -323,3 +340,47 @@ pub func main() {
 		printTurnMessage()
 	}
 }
+
+
+
+
+pub package textEditor
+
+pub type Editor {
+	lines []mut string
+	cursorY, cursorX usize
+	scrollY, scrollX usize
+}
+
+pub func make(editor *Editor) {
+	editor.lines = new [](new "")
+}
+
+
+
+
+func get[type K, type V](map *Map[K, V], key K) optional[V]
+while var element = map->get(key) {}
+
+
+
+
+pub package std.types
+
+pub type none
+
+pub type error
+
+pub type all[type T..] {
+	T
+}
+
+pub type any[type T..] cases {
+	T
+}
+
+pub type result[error, type T..] cases {
+	error, T
+}
+
+pub func onOkay[type T, type U](value any[T])
