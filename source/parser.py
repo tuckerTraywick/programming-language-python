@@ -96,9 +96,6 @@ class Parser:
 		# Skip tokens.
 		while self.hasTokens() and not self.peek(type, text):
 			self.advance()
-
-		# if self.peek(type, text):
-		# 	self.advance()
 		return self.emitError(message)
 	
 	def recoverNode(self, message="", type="", text=""):
@@ -136,8 +133,11 @@ class Parser:
 		while self.consume(text="["):
 			if not self.parseBasic(): return self.recoverNode("Expected a basic expression.", text=";")
 			if not self.consume(text="]"): return self.recoverNode("Expected a closing `]`.", text=";")
+		self.parseLiteral()
 
-		self.consume("number")
 		if not self.currentNode.children:
 			return self.recoverNode("Expected a basic expression.", text=";")
 		return self.endNode()
+
+	def parseLiteral(self):
+		return self.consume("number") or self.consume("identifier")

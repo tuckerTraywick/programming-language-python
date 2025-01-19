@@ -14,6 +14,13 @@ class Token:
 		print(indentation*"| " + str(self))
 
 	def match(self, type="", text=""):
+		# TODO: Maybe try to get rid of the recursion here as it is kind of confusing.
+		if isinstance(type, tuple):
+			return any(self.match(t, text) for t in type)
+		
+		if isinstance(text, tuple):
+			return any(self.match(type, t) for t in text)
+		
 		if type and self.type != type:
 			return False
 		if text and self.text != text:
