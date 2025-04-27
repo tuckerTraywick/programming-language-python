@@ -4,7 +4,7 @@ from parser import *
 parser = Parser()
 
 if __name__ == "__main__":
-	text = "[b[a]; 1 3"
+	text = "1 + 2 * (3 + 4); a b c"
 	
 	print("---- TOKENS ----")
 	tokens = lex(text)

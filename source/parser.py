@@ -28,6 +28,13 @@ class Node:
 
 # A parser that turns tokens into a syntax tree.
 class Parser:
+	def __init__(self):
+		self.reset(None)
+		self.infixOperators = {
+			"+": 10,
+			"*": 20,
+		}
+
 	def reset(self, tokens):
 		self.tokens = tokens
 		self.tokenIndexStack = [0]
@@ -125,18 +132,66 @@ class Parser:
 
 	def parse(self, tokens):
 		self.reset(tokens)
-		self.parseBasic()
+		self.parseExpression()
 		return self.tree
 	
-	def parseBasic(self):
-		self.beginNode("basic")
-		while self.consume(text="["):
-			if not self.parseBasic(): return self.recoverNode("Expected a basic expression.", text=";")
-			if not self.consume(text="]"): return self.recoverNode("Expected a closing `]`.", text=";")
-		self.parseLiteral()
+	def parseExpression(self):
+		return self.parseInfixExpression(0)
+	
+	def nextInfixPrecedence(self):
+		operator = self.peek(type="operator")
+		if operator and operator.text in self.infixOperators:
+			return self.infixOperators[operator.text]
+		return -1
 
+	def parseInfixExpression(self, precedence):
+		self.beginNode("infix expression")
+		if not self.parseBasic():
+			return self.backtrack()
+			
+		while (nextPrecedence := self.nextInfixPrecedence()) > precedence:
+			self.consume(type="operator")
+			if not self.parseInfixExpression(nextPrecedence + 1):
+				return self.recoverNode("Expected an operand for infix operator.")
+			
+		# Just return the child if there is only one.
+		if len(self.currentNode.children) > 1:
+			child = self.currentNode.children[0]
+			self.endNode()
+			self.addLeaf(child)
+			return child
+		return self.endNode()
+	
+	def parseBasic(self):
+		self.beginNode("basic expression")
+		while self.parseArrayDimension(): pass
+		self.parseLiteral()
+		while self.parseFieldAccess(): pass
+		while self.parseFunctionArguments(): pass
 		if not self.currentNode.children:
-			return self.recoverNode("Expected a basic expression.", text=";")
+			return self.backtrack()
+		return self.endNode()
+	
+	def parseArrayDimension(self):
+		self.beginNode("array dimension")
+		if not self.consume(text="["): return self.backtrack()
+		self.parseExpression()
+		if not self.consume(text="]"): return self.recoverNode("Expected a closing `]`.", text=";")
+		return self.endNode()
+	
+	def parseFieldAccess(self):
+		self.beginNode("field access")
+		if not self.consume(text="."): return self.backtrack()
+		if not self.consume("identifier"): return self.recoverNode("Expected an identifier.", text=";")
+		return self.endNode()
+	
+	def parseFunctionArguments(self):
+		self.beginNode("function arguments")
+		if not self.consume(text="("): return self.backtrack()
+		while self.parseExpression():
+			if not self.consume(text=","): break
+		self.consume(text=",") # Eat trailing comma.
+		if not self.consume(text=")"): return self.recoverNode("Expected a closing `)`.", text=";")
 		return self.endNode()
 
 	def parseLiteral(self):

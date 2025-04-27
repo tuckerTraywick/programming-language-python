@@ -1,386 +1,197 @@
-Structural typing? Would solve the ugly cases A... syntax. Would also eliminate the need to
-distinguish between structs and traits. Only exception to structural typing would be methods.
-Structural typing isn't practical with private fields or when field order matters.
-() for construction and tuples
-[] for indexing and generics
+pub module animals
 
-Structs have explicit subtyping and field order and padding matter.
-Traits have implicit and optional explicit subtyping and field order and padding do not matter. You
-can't construct an instance of a trait unless it is a case that is itself a struct. You must refer
-to traits behind pointers. Case order doesn't matter for structs or traits. This lets you cast a pointer to a trait to a struct
-with the same cases and vice versa. Methods follow traits for ease of use. Case structs can have
-methods if all of their cases have an implementation.
-Trait methods are implemented in the same scope they're defined or in the scope of the type
-implementing them.
-If an existing type already has the methods for an existing trait in its scope, it implements it.
-
-What determines whether a type A implements type B's methods?
-- Function definitions in A's package
-- Function definitions in B's package
-Methods and implementations must be in A or B's package.
-
-Types can be by reference or by value. You can't construct by reference types and they must be
-referred to behind a pointer. You can make methods for reference types or case value types.
-
-
-(int32, string)(1, "a") # Tuple
-[10]int32(1, 2, 3, [thru 9] = 0) # Array
-[string]int32(["a"] = 1, ["b"] = 2) # Map
-Dog(name = "fido") # Object
-LinkedList[int32](1, 2, 3) # Generic
-func(x int32) int32 => x + 1 # Anonymous function
-
-
-
-
-
-
-type Color {
-	r, g, b uint8
-} cases {
-	red = (255, 0, 0)
-	green = (0, 255, 0)
-	blue = (0, 0, 255)
-}
-
-
-func takesValueType[type T]()
-func takesReferenceType[type *T]()
-func takesFunc[func f(x int32) int32]()
-func takesValue[X int32]()
-func takesSpecificType[string]()
-func takesSpecificValue[0]()
-func typeConstraint[type T < To[string]]()
-
-
-func resultType() any[int32, error]
-func combineInterfaces(x *all[Equality, Arithmetic, To[string]])
-
-
-type HasTag cases {string, int32}
-type *NoTag cases {int32, string}
-var tag HasTag = 1
-var noTag mut *NoTag = &1
-noTag = &tag // Valid. Structs implement traits with identical cases.
-
-
-pub package interface
-pub type *Fooer
-pub func foo(fooer *Fooer)
-
-pub package implementation
-// You don't have to explicitly embed Fooer or import interface.
-pub type Thing {
-	x int32
-}
-pub func foo(thing *Thing) {}
-
-pub package main
-import {
-	interface
-	implementation
-}
-pub func main() {
-	var x *interface.Fooer = &implementation.Thing() // Allowed.
-}
-
-
-
-
-var (a, b) = ("a", 1)
-var (a, b) int32 = (1, 2)
-var (a, b int32) = ("a", 1)
-var (a string, b int32) = ("a", 1)
-
-for (a, b) in [](("a", 1), ("b", 2))
-for (a, b) int32 in []((1, 2), (3, 4))
-for (a, b int32) in [](("a", 1), ("b", 2))
-for (a string, b int32) in [](("a", 1), ("b", 2))
-
-// Body means argument name is the default. Same rule as variables.
-func(a, b) {a + b}
-func((a, b) int32) {a + b}
-func(a, b int32) {(a, b)}
-func(a string, b int32) {(a, b)}
-
-// No body means argument type is the default.
-func(int32, string)
-func(int32, b string)
-// Return tuples are always type by default.
-func() (int32, string)
-func() (int32, b string)
-
-printLine(x.a, .b)
-printLine((x.a, .b))
-
-
-
-
-pub package animals
-
-// Reference type. Can have methods that take it by reference.
-pub type *Animal {
+pub trait Animal {
 	pub name string
 	pub age uint32
 }
 
 pub func makeNoise(animal *Animal)
 
-pub type Dog {
+pub struct Dog {
 	Animal
 	pub tag string
 }
 
-pub type Cat {
+pub struct Cat {
 	Animal
 	pub breed string
 }
 
-pub func makeNoise(dog *Dog) {}
-
-pub func makeNoise(cat *Cat) {}
-
-
-pub package moreAnimals
-import {
-	animals.*
+pub func makeNoise(dog *Dog) {
+	printLine("woof")
 }
 
-pub type *Pet {
-	Animal
+pub func makeNoise(cat *Cat) {
+	printLine("meow")
 }
 
-pub func walk(pet *Pet)
-
-pub type Hamster {
-	Pet
+pub func main() {
+	var pet mut *Animal = &Dog()
+	makeNoise(pet)
+	pet = &Cat()
+	pet->makeNoise()
 }
 
-pub func makeNoise(hamster *Hamster) {}
-
-pub func walk(hamster *Hamster) {}
-
-pub func walk(dog *Dog) {}
-
-pub func walk(cat *Cat) {}
 
 
 
-
-pub package physics
-import {
-	std.operations
-}
-
-pub type Entity {
-	pub position, velocity, acceleration
+struct Color {
+	r, g, b uint8
 } cases {
-	type Circle {
-		pub radius float64
+	default struct Rgb
+	red = (255,0,0)
+	green = (0,255,0)
+	blue = (0,0,255)
+}
+
+func maybeError() union[int32, MyError]
+
+func combineInterfaces(x *product[Animal, Noisy])
+
+func generic[T type](x T)
+
+func sqrt(x float64) (pos, neg float64)
+
+var tuple (int32, string)
+
+
+
+
+inline func max(a _, b _) _ {
+	return a if a >= b else b
+}
+
+inline func twice(inline x _) {
+	printLine(x)
+	printLine(x) // evaluates x a second time
+}
+
+inline var length int32 = 1
+var array [length]int32
+
+func sinTable(result []mut float64) {
+	for i in 0 until result.length {
+		result[i] = math.sin(math.pi/i)
 	}
+}
+var table [1024]float64
+inline sinTable(&table) // Generate the table at compile time.
 
-	type Mesh {
-		pub vertices owned []Vector
-	}
+
+
+
+// you can disable the compiler inserting checks on frees which makes forgets compile to no ops.
+// forget decreases the allocator's internal pointer count and marks a bool in the stack frame of the thing you're forgetting.
+// you can only forget entire slices or arrays, not just one element.
+
+// lifetime safety is accomplished through ref counting.
+// dropping an allocator before its allocations are freed is a runtime error.
+// you must forget an allocation if you don't want to drop it.
+// forget compiles to noop in release builds.
+
+
+owned *int32 // not allowed to dangle
+weak *int32 // not allowed to dangle
+*int32 // not allowed to dangle
+raw *int23 // allowed to dangle
+
+
+struct Block {
+	next *Block
+	size uint32
+	strongCount uint16
+	weakCount uint16
+	// these two are not present in release builds:
+	normalCount uint16
+	rawCount unt16
 }
 
-pub type Vector {
-	std.operations.To[string], .Equality, .Arithmetic
-	pub x, y float64
+
+var heap mut = BlockAllocator(1024)
+var a owned *int32 = new 1 in heap
+drop a from heap
+drop heap
+
+
+var heap mut = BlockAllocator(1024)
+var a owned *int32 = new 1 in heap
+forget a from heap
+drop heap
+
+
+var heap mut = BlockAllocator(1024)
+var a owned *int32 = new 1 in heap
+var b owned *int32 = move a
+drop b from heap
+drop heap
+
+
+var heap mut = BlockAllocator(1024)
+var a owned *int32 = new 1 in heap
+var b weak *int32 = a
+drop a, b from heap
+drop heap
+
+
+struct Foo {
+	x owned *int32
 }
 
-pub func collide(a, b *mut Entity) {
-	switch *a, *b {
-		case Circle, Circle:
-		case Mesh, Mesh:
-		case Circle, Mesh:
-		case Mesh, Circle:
-	}
+func make() using(allocator *Allocator) Foo {
+	return Foo(x=new int32 in allocator)
 }
 
-pub func to[string](vector *Vector) string {
-	return f"({vector.x}, {vector.y})"
+func drop(foo *Foo) using(allocator *Allocator) {
+	drop foo.x from allocator
 }
 
-
-
-
-pub package lexer
-
-pub type Token {
-	pub struct TokenType
-	pub text string
+func forget(foo *Foo) using(allocator *Allocator) {
+	forget foo.x from allocator
 }
 
-pub type TokenType cases {
-	invalidToken
-	number
-	identifier
-	keyword
-	operator
-}
+var heap mut = BlockAllocator(1024)
+var foo = Foo() using heap
+drop foo using heap
+drop heap
 
-pub func lex(text string) owned []mut Token {}
+var heap mut = BlockAllocator(1024)
+var foo = new Foo() in heap using heap
+drop foo from heap using heap
+drop heap
 
-
-pub package parser
-import {
-	lexer.*
-}
-
-pub type Tree {
-	nodes owned []mut Node
-}
-
-pub type Node {
-	pub type NodeType
-	pub child *Node
-	pub sibling *Node
-}
-
-pub type NodeType cases {
-	invalidSyntax
-	program
-	packageStatement
-	...
-}
-
-// Uses the default implementation. => &tree.nodes
-pub func *nodes(tree *Tree) *[]Node {}
-
-pub func parse(tokens []Token) Node {}
+var heap mut = BlockAllocator(1024)
+var foo = new Foo() in heap using heap
+forget foo using heap
+drop heap
 
 
-
-
-package numberGuesser
-import {
-	std.io.printLine, .inputLine
-	std.math.random
-}
-
-pub func main() {
-	printLine("I'm thinking of a number between 1 and 100. What is it?\n")
-	var number = random[uint32](1 thru 100)
+func gameLoop() {
+	var scratch mut = StackAllocator(1024*10)
 	while true {
-		var guessString = inputLine("guess: ")
-		var guess any[uint32, error] = guessString->to[uint32]()
-		
-		if guess is error {
-			printLine("Enter a number between 1 and 100.")
-		} else if guess == number {
-			printLine("Correct! You win!")
-			break
-		} else {
-			printLine("Incorrect. Guess again.")
-		}
+		freeAll(&scratch)
+		// allocate something in scratch
 	}
 }
 
 
+module globalAllocations
 
+var heap mut BlockAllocator
+var ptr owned *int32
 
-pub package shapes
-import {
-	std.io.printLine
-	std.math.pi, .pow
+// special function
+func initialize() {
+	heap = BlockAllocator(1024)
+	ptr = new 1 in heap
 }
 
-pub type Shape cases {
-	type Circle {
-		pub radius float64
-	}
-
-	type Triangle {
-		pub base, height float64
-	}
-
-	type Rectangle {
-		pub width, height float64
-	}
+// special function
+func deinitialize() {
+	drop ptr from heap
+	drop heap
 }
 
-// You can define methods by value on case types and they are dispatched using the discriminant.
-pub func area(shape Shape) float64
-
-pub func area(circle Circle) float64 {
-	return pi*pow(circle.radius, 2)
+// special function
+func main() {
+	printLine(*ptr)
 }
-
-pub func area(triangle Triangle) float64 {
-	return 0.5*triangle.base*triangle.height
-}
-
-pub func area(rectangle Rectangle) float64 {
-	return rectangle.width*rectangle.height
-}
-
-pub func main() {
-	var shape mut Shape = Circle()
-	printLine(area(shape))
-	shape = Rectangle()
-	printLine(shape->area())
-}
-
-
-
-
-package chess
-
-type Board = [8][8]char
-
-var keepRunning mut = true
-var turn mut uint32
-
-pub func main() {
-	var board mut Board
-	setupBoard(&board)
-	printWelcomeMessage()
-	while keepRunning {
-		printTurnMessage()
-	}
-}
-
-
-
-
-pub package textEditor
-
-pub type Editor {
-	lines []mut string
-	cursorY, cursorX usize
-	scrollY, scrollX usize
-}
-
-pub func make(editor *Editor) {
-	editor.lines = new [](new "")
-}
-
-
-
-
-func get[type K, type V](map *Map[K, V], key K) optional[V]
-while var element = map->get(key) {}
-
-
-
-
-pub package std.types
-
-pub type none
-
-pub type error
-
-pub type all[type T..] {
-	T
-}
-
-pub type any[type T..] cases {
-	T
-}
-
-pub type result[error, type T..] cases {
-	error, T
-}
-
-pub func onOkay[type T, type U](value any[T])
