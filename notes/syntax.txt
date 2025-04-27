@@ -1,197 +1,156 @@
-pub module animals
+var x int32
+func add(a, b int32) int32
+var tuple (int32, string) = (1, "hi")
+var namedTuple (a int32, b string) = (1, b = "hi")
+var array [_]int32 = [1, 2, [3 thru 5] = 10]
+var dict {string}int32 = {["a"] = 1, ["b"] = 2}
+var pointer &int32 = &1
+var object = Dog("fido")
 
-pub trait Animal {
+[1, 2, 3] as [_]int32
+[1, 2] as [10]
+[[until 10] = 0]
+[length = 10]
+[1, 2, 3]
+(1, "a") as (x int32, y string)
+(x = 1, y = "a")
+new [1, 2, 3] as [_]int32
+new [] as [3]int32
+new [length = 3]
+new [1, 2, 3]
+new {["a"] = 1, ["b"] = 2} as {string}int32
+new {} as {string}int32
+new {capacity = 10}
+
+struct
+trait
+cases
+type
+alias
+
+any<int32, MyError>
+all<File, Readable>
+maybe int32
+owned &int32
+shared &int32
+weak &int32
+raw &int32
+mutex int32
+atomic int32
+
+match a
+	case (int32, string)
+	using x, y = a[], a[]
+end
+
+# No anonymous types.
+# No struct/trait shorthand syntax.
+
+struct Color
+	r, g, b uint8
+cases
+	default struct Rgb end  # You have to explicitly specify default cases.
+	red = (255, 0, 0)
+	green = (0, 255, 0)
+	blue = (0, 0, 255)
+end
+
+struct Direction using uint8 cases
+	north = 1
+	south
+	east
+	west
+end
+
+func myGeneric<type T, var x uint32>(x T)
+where T < MyTrait
+where x % 2 == 0
+	return x
+end
+
+
+
+
+pub namespace animals
+using std.io.printLine, .inputLine
+
+pub trait Animal
 	pub name string
 	pub age uint32
-}
+end
 
-pub func makeNoise(animal *Animal)
+pub method makeNoise(animal &Animal)
 
-pub struct Dog {
-	Animal
+pub struct Dog
+	using Animal
 	pub tag string
-}
+end
 
-pub struct Cat {
-	Animal
+pub struct Cat
+	using Animal
 	pub breed string
-}
+end
 
-pub func makeNoise(dog *Dog) {
-	printLine("woof")
-}
+pub func makeNoise(dog &Dog)
+	std.io.printLine("woof")
+end
 
-pub func makeNoise(cat *Cat) {
-	printLine("meow")
-}
+pub func makeNoise(cat &Cat)
+	std.io.printLine("meow")
+end
 
-pub func main() {
-	var pet mut *Animal = &Dog()
+pub func main()
+	var pet mut &Animal = &Dog()
 	makeNoise(pet)
 	pet = &Cat()
 	pet->makeNoise()
-}
+end
 
 
 
 
-struct Color {
-	r, g, b uint8
-} cases {
-	default struct Rgb
-	red = (255,0,0)
-	green = (0,255,0)
-	blue = (0,0,255)
-}
+pub namespace physics
+using std.math
+using std.operations
 
-func maybeError() union[int32, MyError]
+pub struct Entity
+	pub pos, vel, acc Vector
+cases
+	struct Circle
+		pub radius float64
+	end
+	struct Mesh
+		pub vertices owned []Vector
+	end
+end
 
-func combineInterfaces(x *product[Animal, Noisy])
+pub method update(entity &mut Entity)
 
-func generic[T type](x T)
+pub struct Vector
+	using std.operations.To<string>, .Equality, .Arithmetic
+	pub x, y, z float64
+end
 
-func sqrt(x float64) (pos, neg float64)
-
-var tuple (int32, string)
-
-
-
-
-inline func max(a _, b _) _ {
-	return a if a >= b else b
-}
-
-inline func twice(inline x _) {
-	printLine(x)
-	printLine(x) // evaluates x a second time
-}
-
-inline var length int32 = 1
-var array [length]int32
-
-func sinTable(result []mut float64) {
-	for i in 0 until result.length {
-		result[i] = math.sin(math.pi/i)
-	}
-}
-var table [1024]float64
-inline sinTable(&table) // Generate the table at compile time.
+pub func to<string>(vector &Vector)
+	return new f"({vector.x}, {.y}, {.z})"
+end
 
 
 
 
-// you can disable the compiler inserting checks on frees which makes forgets compile to no ops.
-// forget decreases the allocator's internal pointer count and marks a bool in the stack frame of the thing you're forgetting.
-// you can only forget entire slices or arrays, not just one element.
+import std.memory.*
+struct Foo
+	x owned &int32
+end
+pub func make() any<Foo, AllocationError>
+	return try Foo(x = new 1)
+end
 
-// lifetime safety is accomplished through ref counting.
-// dropping an allocator before its allocations are freed is a runtime error.
-// you must forget an allocation if you don't want to drop it.
-// forget compiles to noop in release builds.
+var heapA = BlockAllocator(1024)
+var heapB = StackAllocator(1024)
+var a owned &int32 = new 1 using heapA
+var f = new Foo() using heapA using heapB
 
-
-owned *int32 // not allowed to dangle
-weak *int32 // not allowed to dangle
-*int32 // not allowed to dangle
-raw *int23 // allowed to dangle
-
-
-struct Block {
-	next *Block
-	size uint32
-	strongCount uint16
-	weakCount uint16
-	// these two are not present in release builds:
-	normalCount uint16
-	rawCount unt16
-}
-
-
-var heap mut = BlockAllocator(1024)
-var a owned *int32 = new 1 in heap
-drop a from heap
-drop heap
-
-
-var heap mut = BlockAllocator(1024)
-var a owned *int32 = new 1 in heap
-forget a from heap
-drop heap
-
-
-var heap mut = BlockAllocator(1024)
-var a owned *int32 = new 1 in heap
-var b owned *int32 = move a
-drop b from heap
-drop heap
-
-
-var heap mut = BlockAllocator(1024)
-var a owned *int32 = new 1 in heap
-var b weak *int32 = a
-drop a, b from heap
-drop heap
-
-
-struct Foo {
-	x owned *int32
-}
-
-func make() using(allocator *Allocator) Foo {
-	return Foo(x=new int32 in allocator)
-}
-
-func drop(foo *Foo) using(allocator *Allocator) {
-	drop foo.x from allocator
-}
-
-func forget(foo *Foo) using(allocator *Allocator) {
-	forget foo.x from allocator
-}
-
-var heap mut = BlockAllocator(1024)
-var foo = Foo() using heap
-drop foo using heap
-drop heap
-
-var heap mut = BlockAllocator(1024)
-var foo = new Foo() in heap using heap
-drop foo from heap using heap
-drop heap
-
-var heap mut = BlockAllocator(1024)
-var foo = new Foo() in heap using heap
-forget foo using heap
-drop heap
-
-
-func gameLoop() {
-	var scratch mut = StackAllocator(1024*10)
-	while true {
-		freeAll(&scratch)
-		// allocate something in scratch
-	}
-}
-
-
-module globalAllocations
-
-var heap mut BlockAllocator
-var ptr owned *int32
-
-// special function
-func initialize() {
-	heap = BlockAllocator(1024)
-	ptr = new 1 in heap
-}
-
-// special function
-func deinitialize() {
-	drop ptr from heap
-	drop heap
-}
-
-// special function
-func main() {
-	printLine(*ptr)
-}
+using allocator = BlockAllocator(1024)
+var a owned &int32 = new 1
+var f = new Foo()
