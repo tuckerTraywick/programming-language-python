@@ -1,33 +1,132 @@
 from lexer import *
 
+# An error encountered during parsing.
+class ParsingError:
+	def __init__(self, message: str):
+		self.message = message
+
+	def __repr__(self) -> str:
+		return self.message
+
 # A node in the parse tree.
 class Node:
-	def __init__(self, type: str, *children: "Node"):
+	def __init__(self, type: str, parent: "Node | None", *children: "Node"):
 		self.type = type
+		self.parent = parent
 		self.children = list(children)
 
-	def __repr__(self):
-		# If the node is an error, don't print its children.
-		if self.type == "error":
-			return f"Parsing error: {self.children[0]}"
+	def __repr__(self) -> str:
 		return f"{self.type}({', '.join(map(str, self.children))})"
 
 	# Prints a readable multi-line representation of the node and its children.
 	def prettyPrint(self, indentation: int=0):
-		if self.type == "error":
-			print(indentation*"| " + self.children[0])
-			return
-		
 		print(indentation*"| " + self.type)
 		for child in self.children:
-			child.prettyPrint(indentation + 1)
+			if isinstance(child, Node):
+				child.prettyPrint(indentation + 1)
+			else:
+				print((indentation + 1)*"| " + str(child))
 
 class _Parser:
-	prefixPrecedences = {}
-	infixPrecedences = {}
+	prefixPrecedences = {
+		"+": 30,
+	}
+	infixPrecedences = {
+		"+": 10,
+		"*": 20,
+	}
 
 	def __init__(self, tokens: list[Token]):
 		self.tokens = tokens
+		self.currentTokenIndex: int = 0
+		self.tree: Node = None
+		self.currentNode: Node = self.tree
+		self.errors: list[ParsingError] = []
 
-def parse(tokens: list[Token]) -> tuple[Node, list[Node]]:
+	@property
+	def currentToken(self) -> Token:
+		return self.tokens[self.currentTokenIndex]
+
+	def peekToken(self, *types: str) -> bool:
+		return self.currentTokenIndex < len(self.tokens) and self.currentToken.type in types
+
+	def consumeToken(self, *types: str) -> bool:
+		if self.peekToken(*types):
+			self.currentNode.children.append(self.currentToken)
+			self.currentTokenIndex += 1
+			return True
+		return False
+	
+	def consumePrefixOperator(self, precedence: int) -> int:
+		if self.peekToken("operator") and (newPrecedence := self.prefixPrecedences[self.currentToken.text]) > precedence:
+			self.consumeToken("operator")
+			return newPrecedence
+		return 0
+	
+	def consumeInfixOperator(self, precedence: int) -> int:
+		if self.peekToken("operator") and (newPrecedence := self.infixPrecedences[self.currentToken.text]) > precedence:
+			self.consumeToken("operator")
+			return newPrecedence
+		return 0
+	
+	def beginNode(self, type: str) -> bool:
+		if self.tree is None:
+			self.tree = Node(type, None)
+			self.currentNode = self.tree
+			return True
+		self.currentNode.children.append(Node(type, self.currentNode))
+		self.currentNode = self.currentNode.children[-1]
+		return True
+	
+	def endNode(self) -> bool:
+		self.currentNode = self.currentNode.parent
+		return True
+	
+	def backtrack(self) -> bool:
+		self.endNode()
+		if self.currentNode:
+			self.currentNode.children.pop()
+		return False
+	
+	def emitError(self, type: str) -> bool:
+		self.errors.append()
+
+	def parseBasicExpression(self) -> bool:
+		return self.consumeToken("number", "character", "string", "identifier")
+
+	def parsePrefixExpression(self, precedence: int) -> bool:
+		self.beginNode("prefix expression")
+		if (newPrecedence := self.consumePrefixOperator(precedence)):
+			if not self.parseInfixExpression(newPrecedence): return self.emitError("Expected an expression.")
+			return self.endNode()
+		if not self.parseBasicExpression(): return self.backtrack()
+		
+		if len(self.currentNode.children) == 1:
+			child = self.currentNode.children[0]
+			self.endNode()
+			self.currentNode.children[-1] = child
+			return True
+		return self.endNode()
+
+	def parseInfixExpression(self, precedence: int) -> bool:
+		self.beginNode("infix expression")
+		if not self.parsePrefixExpression(precedence): return self.backtrack()
+		while (newPrecedence := self.consumeInfixOperator(precedence)):
+			if not self.parseInfixExpression(newPrecedence): return self.emitError("Expected an expression.")
+
+		if len(self.currentNode.children) == 1:
+			child = self.currentNode.children[0]
+			self.endNode()
+			self.currentNode.children[-1] = child
+			return True
+		return self.endNode()
+	
+	def parseProgram(self):
+		self.beginNode("program")
+		self.parseInfixExpression(0)
+		self.endNode()
+
+def parse(tokens: list[Token]) -> tuple[Node, list[ParsingError]]:
 	parser: _Parser = _Parser(tokens)
+	parser.parseProgram()
+	return (parser.tree, parser.errors)
