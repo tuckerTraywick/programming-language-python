@@ -1,7 +1,7 @@
 from lexer import *
 
 if __name__ == "__main__":
-	text = "123@  asdf \n123"
+	text = "foo<int>"
 	print("---- TOKENS ----")
 	(tokens, lexingErrors) = lex(text)
 	print("\n".join(map(str, tokens)))

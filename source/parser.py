@@ -2,7 +2,7 @@ from lexer import *
 
 # A node in the parse tree.
 class Node:
-	def __init__(self, type, *children):
+	def __init__(self, type: str, *children: "Node"):
 		self.type = type
 		self.children = list(children)
 
@@ -13,7 +13,7 @@ class Node:
 		return f"{self.type}({', '.join(map(str, self.children))})"
 
 	# Prints a readable multi-line representation of the node and its children.
-	def prettyPrint(self, indentation=0):
+	def prettyPrint(self, indentation: int=0):
 		if self.type == "error":
 			print(indentation*"| " + self.children[0])
 			return

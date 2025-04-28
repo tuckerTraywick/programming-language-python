@@ -4,6 +4,8 @@ class Token:
 		self.text = text
 
 	def __repr__(self):
+		if self.type.endswith("."):
+			return f"Lexing error: {self.type}"
 		return f"{self.type} `{self.text}`"
 
 def lex(text: str) -> tuple[list[Token], list[Token]] | None:
@@ -156,7 +158,10 @@ def lex(text: str) -> tuple[list[Token], list[Token]] | None:
 		else:
 			for operator in operators:
 				if text.startswith(operator, i):
-					tokens.append(Token(operator, operator))
+					if operator == "<" and i > 0 and text[i-1] not in whitespace:
+						tokens.append(Token("generic <", operator))
+					else:
+						tokens.append(Token(operator, operator))
 					i += len(operator)
 					break
 			else:
