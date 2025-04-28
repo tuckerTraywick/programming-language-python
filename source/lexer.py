@@ -43,11 +43,17 @@ def lex(text: str) -> tuple[list[Token], list[Token]] | None:
 		"return",
 		"yield",
 		"is",
+		"isnot",
+		"istype",
+		"isnottype",
 		"as",
 		"and",
 		"or",
 		"xor",
 		"not",
+		"new",
+		"drop",
+		"move",
 	}
 	operators: set[str] = {
 		"+=",

@@ -47,6 +47,23 @@ struct Direction = uint8 cases {
 	west
 }
 
+var tuple (x int32, y string) = (1, "a")
+var tuple = (1, "a") as (x int32, y string)
+var array [10]int32 = [1, 2, 3]
+var array = [1, 2, 3] as [10]int32
+new [] as [10]int32 using heap
+new (1, "a") as (int32, string)
+
+maybe int32
+any<int32, MyError>
+all<File, Readable>
+owned &int32
+weak &int32
+raw &int32
+mutex int32
+
+
+
 
 struct Foo {
 	x owned &int32
