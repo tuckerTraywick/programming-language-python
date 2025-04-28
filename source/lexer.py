@@ -1,20 +1,16 @@
 class Token:
-	def __init__(self, type, text):
+	def __init__(self, type: str, text: str):
 		self.type = type
 		self.text = text
 
 	def __repr__(self):
-		# If the token is an error, print the error message.
-		if self.type.endswith("."):
-			return f"Lexing error: {self.type} `{self.text}`"
 		return f"{self.type} `{self.text}`"
 
-def lex(text):
-	whitespace = " \t\r\n"
-	keywords = {
-		"module",
-		"import",
-		"export",
+def lex(text: str) -> tuple[list[Token], list[Token]] | None:
+	whitespace: str = " \t\r\n"
+	keywords: set[str] = {
+		"namespace",
+		"using",
 		"pub",
 		"inline",
 		"static",
@@ -22,11 +18,11 @@ def lex(text):
 		"func",
 		"struct",
 		"trait",
-		"type",
-		"alias",
+		"cases",
 		"mut",
 		"owned",
 		"weak",
+		"raw",
 		"if",
 		"else",
 		"do",
@@ -44,7 +40,6 @@ def lex(text):
 		"continue",
 		"return",
 		"yield",
-		"match",
 		"is",
 		"as",
 		"and",
@@ -52,7 +47,7 @@ def lex(text):
 		"xor",
 		"not",
 	}
-	operators = {
+	operators: set[str] = {
 		"+=",
 		"+",
 		"-=",
@@ -93,9 +88,81 @@ def lex(text):
 		";",
 	}
 
-	tokens = []
-	currentToken = ""
-	i = 0
+	tokens: list[Token] = []
+	errors: list[Token] = []
+	currentToken: str = ""
+	i: int = 0
 	while i < len(text):
+		if text[i] in whitespace:
+			i += 1
+			continue
 		
-	return tokens
+		# Lex a number.
+		if text[i].isdigit():
+			while i < len(text) and text[i].isdigit():
+				currentToken += text[i]
+				i += 1
+			tokens.append(Token("number", currentToken))
+			currentToken = ""
+		# Lex a character.
+		elif text[i] == "'":
+			currentToken += text[i]
+			i += 1
+			while i < len(text) and text[i] != "'" and text[i] != "\n":
+				if text.startswith("\\'", i):
+					currentToken += "\\'"
+					i += 2
+				else:
+					currentToken += text[i]
+					i += 1
+
+			if i < len(text) and text[i] == "'":
+				currentToken += "'"
+				i += 1
+				tokens.append(Token("character", currentToken))
+			else:
+				tokens.append(Token("Unclosed single quote.", currentToken))
+				errors.append(tokens[-1])
+			currentToken = ""
+		# Lex a string.
+		elif text[i] == '"':
+			currentToken += text[i]
+			i += 1
+			while i < len(text) and text[i] != '"' and text[i] != "\n":
+				if text.startswith('\\"', i):
+					currentToken += '\\"'
+					i += 2
+				else:
+					currentToken += text[i]
+					i += 1
+
+			if i < len(text) and text[i] == '"':
+				currentToken += '"'
+				i += 1
+				tokens.append(Token("string", currentToken))
+			else:
+				tokens.append(Token("Unclosed double quote.", currentToken))
+				errors.append(tokens[-1])
+			currentToken = ""
+		# Lex an identifier or keyword.
+		elif text[i].isalpha() or text[i] == "_":
+			while i < len(text) and (text[i].isalnum() or text[i] == "_"):
+				currentToken += text[i]
+				i += 1
+			tokens.append(Token(currentToken if currentToken in keywords else "identifier", currentToken))
+			currentToken = ""
+		# Lex an operator.
+		else:
+			for operator in operators:
+				if text.startswith(operator, i):
+					tokens.append(Token(operator, operator))
+					i += len(operator)
+					break
+			else:
+				while i < len(tokens) and text[i] != "\n":
+					currentToken += text[i]
+					i += 1
+				tokens.append(Token("Invalid token.", currentToken))
+				errors.append(tokens[-1])
+				currentToken = ""
+	return (tokens, errors)

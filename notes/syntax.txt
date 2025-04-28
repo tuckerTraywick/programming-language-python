@@ -1,156 +1,126 @@
-var x int32
-func add(a, b int32) int32
-var tuple (int32, string) = (1, "hi")
-var namedTuple (a int32, b string) = (1, b = "hi")
-var array [_]int32 = [1, 2, [3 thru 5] = 10]
-var dict {string}int32 = {["a"] = 1, ["b"] = 2}
-var pointer &int32 = &1
-var object = Dog("fido")
+// compilation units specify namespaces they depend on.
+// source files don't have to import things unless they want to shorten a name.
+// you cannot assign functions. to alias a function, do a using statement.
 
-[1, 2, 3] as [_]int32
-[1, 2] as [10]
-[[until 10] = 0]
-[length = 10]
-[1, 2, 3]
-(1, "a") as (x int32, y string)
-(x = 1, y = "a")
-new [1, 2, 3] as [_]int32
-new [] as [3]int32
-new [length = 3]
-new [1, 2, 3]
-new {["a"] = 1, ["b"] = 2} as {string}int32
-new {} as {string}int32
-new {capacity = 10}
+// myProject/package.txt
+version 1.0.0
+subpackages {
+	pakageName {
+		namespace1
+		namespace2
+	}
+}
+dependencies {
+	std.io
+	std.math
+	somePackage
+}
 
-struct
-trait
-cases
-type
-alias
+using std.io
+using std.io.*
+using std.io
+	.printLine,
+	.inputLine
+using myIo = std.io // explicit export.
+pub using std.io.* // export all.
+pub using myPrint = std.io.printLine // explicit function export.
+pub using myPi = std.math.pi // same variable with same address.
+pub var myPi = std.math.pi // different var with different address.
 
-any<int32, MyError>
-all<File, Readable>
-maybe int32
-owned &int32
-shared &int32
-weak &int32
-raw &int32
-mutex int32
-atomic int32
+using BigInt = int64 // is not a distinct type.
 
-match a
-	case (int32, string)
-	using x, y = a[], a[]
-end
+struct UserID = uint32 // is a distinct type.
 
-# No anonymous types.
-# No struct/trait shorthand syntax.
-
-struct Color
+struct Color {
 	r, g, b uint8
-cases
-	default struct Rgb end  # You have to explicitly specify default cases.
+} cases {
+	default struct Rgb
 	red = (255, 0, 0)
 	green = (0, 255, 0)
 	blue = (0, 0, 255)
-end
+}
 
-struct Direction using uint8 cases
-	north = 1
+struct Direction = uint8 cases {
+	north
 	south
 	east
 	west
-end
+}
 
-func myGeneric<type T, var x uint32>(x T)
-where T < MyTrait
-where x % 2 == 0
-	return x
-end
+
+struct Foo {
+	x owned &int32
+}
+func make() any<Foo, AllocationError> {
+	return Foo(new 1)
+}
+
+var heapA = BlockAllocator(1024)
+var heapB = StackAllocator(1024)
+var foo owned &Foo = new Foo() using heapA using heapB
+drop *foo using heapA
+drop foo using heapB
+
+using var allocator = BlockAllocator(1024)
+var foo = new Foo()
 
 
 
 
 pub namespace animals
-using std.io.printLine, .inputLine
+using std.io.printLine
 
-pub trait Animal
+pub trait Animal {
 	pub name string
 	pub age uint32
-end
+}
 
 pub method makeNoise(animal &Animal)
 
-pub struct Dog
+pub struct Dog {
 	using Animal
 	pub tag string
-end
+}
 
-pub struct Cat
+pub struct Cat {
 	using Animal
 	pub breed string
-end
+}
 
-pub func makeNoise(dog &Dog)
-	std.io.printLine("woof")
-end
+pub func makeNoise(dog &Dog) {
+	printLine("woof")
+}
 
-pub func makeNoise(cat &Cat)
-	std.io.printLine("meow")
-end
+pub func makeNoise(cat &Cat) {
+	printLine("meow")
+}
 
-pub func main()
+pub func main() {
 	var pet mut &Animal = &Dog()
 	makeNoise(pet)
 	pet = &Cat()
 	pet->makeNoise()
-end
+}
 
 
 
 
 pub namespace physics
-using std.math
-using std.operations
 
-pub struct Entity
+pub struct Entity {
 	pub pos, vel, acc Vector
-cases
-	struct Circle
-		pub radius float64
-	end
-	struct Mesh
-		pub vertices owned []Vector
-	end
-end
+} cases {
+	struct Circle {pub radius float64}
+	struct Mesh {pub vertices owned []Vector}
+}
 
 pub method update(entity &mut Entity)
 
-pub struct Vector
+pub struct Vector {
 	using std.operations.To<string>, .Equality, .Arithmetic
-	pub x, y, z float64
-end
+	pub x, y float64
+}
 
-pub func to<string>(vector &Vector)
-	return new f"({vector.x}, {.y}, {.z})"
-end
-
-
-
-
-import std.memory.*
-struct Foo
-	x owned &int32
-end
-pub func make() any<Foo, AllocationError>
-	return try Foo(x = new 1)
-end
-
-var heapA = BlockAllocator(1024)
-var heapB = StackAllocator(1024)
-var a owned &int32 = new 1 using heapA
-var f = new Foo() using heapA using heapB
-
-using allocator = BlockAllocator(1024)
-var a owned &int32 = new 1
-var f = new Foo()
+pub func to<string>(vector *Vector) {
+	return new f"({vector.x}, {.y})"
+}
