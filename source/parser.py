@@ -34,6 +34,7 @@ class _Parser:
 	infixPrecedences = {
 		"+": 10,
 		"*": 20,
+		"^": 40,
 	}
 
 	def __init__(self, tokens: list[Token]):
