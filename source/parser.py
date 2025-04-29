@@ -29,6 +29,7 @@ class Node:
 
 class _Parser:
 	prefixPrecedences = {
+		"(": 1000,
 		"+": 30,
 	}
 	infixPrecedences = {
@@ -48,25 +49,35 @@ class _Parser:
 	def currentToken(self) -> Token:
 		return self.tokens[self.currentTokenIndex]
 
-	def peekToken(self, *types: str) -> bool:
+	def peekTokenType(self, *types: str) -> bool:
 		return self.currentTokenIndex < len(self.tokens) and self.currentToken.type in types
+	
+	def peekTokenText(self, *texts: str) -> bool:
+		return self.currentTokenIndex < len(self.tokens) and self.currentToken.text in texts
 
-	def consumeToken(self, *types: str) -> bool:
-		if self.peekToken(*types):
+	def consumeTokenType(self, *types: str) -> bool:
+		if self.peekTokenType(*types):
 			self.currentNode.children.append(self.currentToken)
 			self.currentTokenIndex += 1
 			return True
 		return False
 	
+	def consumeTokenText(self, *texts: str) -> bool:
+		if self.peekTokenText(*texts):
+			self.currentNode.children.append(self.currentToken)
+			self.currentTokenIndex += 1
+			return True
+		return False
+
 	def consumePrefixOperator(self, precedence: int) -> int:
-		if self.peekToken("operator") and (newPrecedence := self.prefixPrecedences[self.currentToken.text]) > precedence:
-			self.consumeToken("operator")
+		if self.peekTokenType("operator", "bracket") and self.currentToken.text in self.prefixPrecedences and (newPrecedence := self.prefixPrecedences[self.currentToken.text]) > precedence:
+			self.consumeTokenType("operator", "bracket")
 			return newPrecedence
 		return 0
 	
 	def consumeInfixOperator(self, precedence: int) -> int:
-		if self.peekToken("operator") and (newPrecedence := self.infixPrecedences[self.currentToken.text]) > precedence:
-			self.consumeToken("operator")
+		if self.peekTokenType("operator", "bracket") and self.currentToken.text in self.infixPrecedences and (newPrecedence := self.infixPrecedences[self.currentToken.text]) > precedence:
+			self.consumeTokenType("operator", "bracket")
 			return newPrecedence
 		return 0
 	
@@ -90,15 +101,16 @@ class _Parser:
 		return False
 	
 	def emitError(self, type: str) -> bool:
-		self.errors.append()
+		self.errors.append(ParsingError(type))
 
 	def parseBasicExpression(self) -> bool:
-		return self.consumeToken("number", "character", "string", "identifier")
+		return self.consumeTokenType("number", "character", "string", "identifier")
 
 	def parsePrefixExpression(self, precedence: int) -> bool:
 		self.beginNode("prefix expression")
 		if (newPrecedence := self.consumePrefixOperator(precedence)):
 			if not self.parseInfixExpression(newPrecedence): return self.emitError("Expected an expression.")
+			if self.currentNode.children[0].text == "(" and not self.consumeTokenText(")"): return self.emitError("Unclosed parenthesis.")
 			return self.endNode()
 		if not self.parseBasicExpression(): return self.backtrack()
 		
