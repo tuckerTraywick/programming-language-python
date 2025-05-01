@@ -30,12 +30,15 @@ class Node:
 class _Parser:
 	prefixPrecedences = {
 		"(": 1000,
-		"+": 30,
+		"[": 1000,
+		"+": 40,
 	}
 	infixPrecedences = {
-		"+": 10,
-		"*": 20,
-		"^": 40,
+		"^": 50,
+		"*": 30,
+		"+": 20,
+		"(": 10,
+		"[": 10,
 	}
 
 	def __init__(self, tokens: list[Token]):
@@ -70,7 +73,7 @@ class _Parser:
 		return False
 
 	def consumePrefixOperator(self, precedence: int) -> int:
-		if self.peekTokenType("operator", "bracket") and self.currentToken.text in self.prefixPrecedences and (newPrecedence := self.prefixPrecedences[self.currentToken.text]) > precedence:
+		if self.peekTokenType("operator", "bracket") and self.currentToken.text in self.prefixPrecedences and (newPrecedence := self.prefixPrecedences[self.currentToken.text]):
 			self.consumeTokenType("operator", "bracket")
 			return newPrecedence
 		return 0
@@ -106,12 +109,30 @@ class _Parser:
 	def parseBasicExpression(self) -> bool:
 		return self.consumeTokenType("number", "character", "string", "identifier")
 
+	def parseCommaList(self) -> bool:
+		# TODO: parse assignments here.
+		if not self.parseInfixExpression(0):
+			return False
+		while self.consumeTokenText(","):
+			self.parseInfixExpression(0)
+		return True
+
 	def parsePrefixExpression(self, precedence: int) -> bool:
+		print("prefix", precedence)
 		self.beginNode("prefix expression")
+		# Parse a prefix expression or bracketed list.
 		if (newPrecedence := self.consumePrefixOperator(precedence)):
-			if not self.parseInfixExpression(newPrecedence): return self.emitError("Expected an expression.")
-			if self.currentNode.children[0].text == "(" and not self.consumeTokenText(")"): return self.emitError("Unclosed parenthesis.")
+			if self.currentNode.children[0].text == "(":
+				self.parseCommaList()
+				if not self.consumeTokenText(")"): return self.emitError("Unclosed parenthesis.")
+			elif self.currentNode.children[0].text == "[":
+				self.parseCommaList()
+				if not self.consumeTokenText("]"): return self.emitError("Unclosed square bracket.")
+			elif not self.parseInfixExpression(newPrecedence):
+				return self.emitError("Expected an expression.")
 			return self.endNode()
+
+		# Parse a basic expression.
 		if not self.parseBasicExpression(): return self.backtrack()
 		
 		if len(self.currentNode.children) == 1:
@@ -125,7 +146,12 @@ class _Parser:
 		self.beginNode("infix expression")
 		if not self.parsePrefixExpression(precedence): return self.backtrack()
 		while (newPrecedence := self.consumeInfixOperator(precedence)):
-			if not self.parseInfixExpression(newPrecedence): return self.emitError("Expected an expression.")
+			print("infix", newPrecedence)
+			if self.currentNode.children[-1].text == "(":
+				self.parseCommaList()
+				if not self.consumeTokenText(")"): return self.emitError("Unclosed parenthesis.")
+			elif not self.parseInfixExpression(newPrecedence):
+				return self.emitError("Expected an expression.")
 
 		if len(self.currentNode.children) == 1:
 			child = self.currentNode.children[0]
