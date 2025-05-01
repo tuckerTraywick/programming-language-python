@@ -146,10 +146,12 @@ class _Parser:
 		self.beginNode("infix expression")
 		if not self.parsePrefixExpression(precedence): return self.backtrack()
 		while (newPrecedence := self.consumeInfixOperator(precedence)):
-			print("infix", newPrecedence)
 			if self.currentNode.children[-1].text == "(":
 				self.parseCommaList()
 				if not self.consumeTokenText(")"): return self.emitError("Unclosed parenthesis.")
+			elif self.currentNode.children[-1].text == "[":
+				self.parseCommaList()
+				if not self.consumeTokenText("]"): return self.emitError("Unclosed square bracket.")
 			elif not self.parseInfixExpression(newPrecedence):
 				return self.emitError("Expected an expression.")
 

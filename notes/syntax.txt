@@ -141,3 +141,39 @@ pub struct Vector {
 pub func to<string>(vector *Vector) {
 	return new f"({vector.x}, {.y})"
 }
+
+
+
+
+pub namespace shapes
+using std.math.pi
+using std.io.printLine
+
+pub struct Shape cases {
+	struct Circle {pub radius float64}
+	struct Triangle {pub base, height float64}
+	struct Rectangle {pub width, height float64}
+}
+
+pub method area(shape &Shape) float64
+
+pub func area(circle &Circle) {
+	return pi*circle.radius*circle.radius
+}
+
+pub func area(triangle &Triangle) {
+	return 0.5*triangle.base*triangle.height
+}
+
+pub func area(rectangle &Rectangle) {
+	return rectangle.width*rectangle.height
+}
+
+pub func main() {
+	var shape mut Shape = Circle(1)
+	printLine(area(&circle))
+	shape = Triangle(2, 3)
+	printLine(shape->area())
+	shape = Rectangle(4, 5)
+	printLine(shape->area())
+}
