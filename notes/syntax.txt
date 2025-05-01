@@ -138,7 +138,7 @@ pub struct Vector {
 	pub x, y float64
 }
 
-pub func to<string>(vector *Vector) {
+pub func to<string>(vector &Vector) {
 	return new f"({vector.x}, {.y})"
 }
 
