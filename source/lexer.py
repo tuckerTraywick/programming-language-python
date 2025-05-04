@@ -50,8 +50,8 @@ def lex(text: str) -> tuple[list[Token], list[LexingError]] | None:
 		"yield",
 		"is",
 		"isnot",
-		"istype",
-		"isnottype",
+		"isa",
+		"isnota",
 		"as",
 		"and",
 		"or",
@@ -100,7 +100,6 @@ def lex(text: str) -> tuple[list[Token], list[LexingError]] | None:
 		"}",
 		".",
 		",",
-		";",
 	}
 
 	tokens: list[Token] = []
