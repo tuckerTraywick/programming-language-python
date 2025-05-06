@@ -14,6 +14,8 @@ if __name__ == "__main__":
 			return x + 1;
 		}
 	}
+	method f();
+	func f() {}
 	"""
 	(tokens, lexingErrors) = lex(text)
 	print("---- TOKENS ----")

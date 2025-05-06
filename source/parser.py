@@ -353,6 +353,7 @@ class _Parser:
 		if self.parseUsingStatement(): return True
 		if self.parseVariableDefinition(False): return True
 		if self.parseFunctionDefinition(False): return True
+		if self.parseMethodDefinition(False): return True
 		if self.parseStructDefinition(False): return True
 		if self.parseTraitDefinition(False): return True
 		if self.parseBlock(): return True
@@ -458,6 +459,17 @@ class _Parser:
 		self.consumeTokenText(";")
 		return self.endNode()
 
+	def parseMethodDefinition(self, allowPub: bool=True) -> bool:
+		self.beginNode("method definition")
+		if not allowPub and self.consumeTokenText("pub"): return self.emitError("Access modifier not allowed here.")
+		if not self.consumeTokenText("method"): return self.backtrack()
+		if not self.consumeTokenType("identifier"): return self.emitError("Expected a method name.")
+		self.parseGenericParameters()
+		if not self.parseFunctionParameters(): return self.emitError("Expected method parameters.")
+		self.parseType()
+		if not self.consumeTokenText(";"): return self.emitError("Expected a semicolon.")
+		return self.endNode()
+	
 	def parseFunctionDefinition(self, allowPub: bool=True) -> bool:
 		self.beginNode("function definition")
 		if not allowPub and self.consumeTokenText("pub"): return self.emitError("Access modifier not allowed here.")
@@ -500,6 +512,7 @@ class _Parser:
 		if self.parseUsingStatement(): return True
 		if self.parseVariableDefinition(): return True
 		if self.parseFunctionDefinition(): return True
+		if self.parseMethodDefinition(): return True
 		if self.parseStructDefinition(): return True
 		if self.parseTraitDefinition(): return True
 		return False

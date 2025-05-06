@@ -24,6 +24,7 @@ def lex(text: str) -> tuple[list[Token], list[LexingError]] | None:
 		# "static",
 		"var",
 		"func",
+		"method",
 		"struct",
 		"trait",
 		"cases",
