@@ -3,14 +3,10 @@ from parser import *
 
 if __name__ == "__main__":
 	text = """
-	struct Color {
-		r uint8;
-		g uint8;
-		b uint8;
-	} cases {
-		red; green; blue;
-		struct Rgb;
+	struct List<type T, int32> {
+		x T;
 	}
+	func generic<type T>(x T) T {}
 	"""
 	(tokens, lexingErrors) = lex(text)
 	print("---- TOKENS ----")

@@ -345,11 +345,30 @@ class _Parser:
 		if not self.consumeTokenText("}"): return self.emitError("Unclosed curly brace.")
 		return self.endNode()
 	
+	def parseGenericTypeParameter(self) -> bool:
+		self.beginNode("type parameter")
+		if not self.consumeTokenText("type", "struct", "trait"): return self.backtrack()
+		if not self.consumeTokenType("identifier"): return self.emitError("Expected an identifier.")
+		return self.endNode()
+
+	def parseGenericParameter(self) -> bool:
+		if self.parseGenericTypeParameter(): return True
+		return self.parseType()
+	
+	def parseGenericParameters(self) -> bool:
+		self.beginNode("generic parameters")
+		if not self.consumeTokenText("generic <"): return self.backtrack()
+		while self.parseGenericParameter():
+			if not self.consumeTokenText(","): break
+		if not self.consumeTokenText(">"): return self.emitError("Unclosed angle bracket.")
+		return self.endNode()
+	
 	def parseTraitDefinition(self, allowPub: bool=True) -> bool:
 		self.beginNode("trait definintion")
 		if not allowPub and self.consumeTokenText("pub"): return self.emitError("Access modifier not allowed here.")
 		if not self.consumeTokenText("trait"): return self.backtrack()
 		if not self.consumeTokenType("identifier"): return self.emitError("Expected a struct name.")
+		self.parseGenericParameters()
 		self.parseStructBody()
 		self.parseTypeCases()
 		self.consumeTokenText(";")
@@ -360,6 +379,7 @@ class _Parser:
 		if not allowPub and self.consumeTokenText("pub"): return self.emitError("Access modifier not allowed here.")
 		if not self.consumeTokenText("struct"): return self.backtrack()
 		if not self.consumeTokenType("identifier"): return self.emitError("Expected a struct name.")
+		self.parseGenericParameters()
 		self.parseStructBody()
 		self.parseTypeCases()
 		self.consumeTokenText(";")
@@ -370,6 +390,7 @@ class _Parser:
 		if not allowPub and self.consumeTokenText("pub"): return self.emitError("Access modifier not allowed here.")
 		if not self.consumeTokenText("func"): return self.backtrack()
 		if not self.consumeTokenType("identifier"): return self.emitError("Expected a function name.")
+		self.parseGenericParameters()
 		if not self.parseFunctionParameters(): return self.emitError("Expected function parameters.")
 		self.parseType()
 		if not self.parseBlock(): return self.emitError("Expected a function body.")
