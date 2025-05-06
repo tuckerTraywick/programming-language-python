@@ -289,6 +289,43 @@ class _Parser:
 		if not self.consumeTokenText(";"): return self.emitError("Expected a semicolon.")
 		return self.endNode()
 	
+	def parseReturnStatement(self) -> bool:
+		self.beginNode("return statement")
+		if not self.consumeTokenText("return"): return self.backtrack()
+		self.parseInfixExpression(0)
+		if not self.consumeTokenText(";"): return self.emitError("Expected a semicolon.")
+		return self.endNode()
+
+	def parseContinueStatement(self) -> bool:
+		self.beginNode("continue statement")
+		if not self.consumeTokenText("continue"): return self.backtrack()
+		if not self.consumeTokenText(";"): return self.emitError("Expected a semicolon.")
+		return self.endNode()
+
+	def parseBreakStatement(self) -> bool:
+		self.beginNode("break statement")
+		if not self.consumeTokenText("break"): return self.backtrack()
+		if not self.consumeTokenText(";"): return self.emitError("Expected a semicolon.")
+		return self.endNode()
+
+	def parseForLoop(self) -> bool:
+		self.beginNode("for loop")
+		if not self.consumeTokenText("for"): return self.backtrack()
+		if not self.consumeTokenType("identifier"): return self.emitError("Expected a variable name.")
+		self.parseType()
+		if not self.consumeTokenText("in"): return self.emitError("Expected `in` statement.")
+		if not self.parseInfixExpression(0): return self.emitError("Expected an expression.")
+		if not self.parseBlock(): return self.emitError("Expected a block.")
+		return self.endNode()
+	
+	def parseWhileLoop(self) -> bool:
+		self.beginNode("while loop")
+		self.consumeTokenText("do")
+		if not self.consumeTokenText("while"): return self.backtrack()
+		if not self.parseInfixExpression(0): return self.emitError("Expected an expression.")
+		if not self.parseBlock(): return self.emitError("Expected a block.")
+		return self.endNode()
+	
 	def parseElse(self) -> bool:
 		self.beginNode("else block")
 		if not self.consumeTokenText("else"): return self.backtrack()
@@ -320,6 +357,11 @@ class _Parser:
 		if self.parseTraitDefinition(False): return True
 		if self.parseBlock(): return True
 		if self.parseIfStatement(): return True
+		if self.parseWhileLoop(): return True
+		if self.parseForLoop(): return True
+		if self.parseBreakStatement(): return True
+		if self.parseContinueStatement(): return True
+		if self.parseReturnStatement(): return True
 		if self.parseExpressionOrAssignment(): return True
 		return False
 	
@@ -347,6 +389,7 @@ class _Parser:
 		self.beginNode("type cases")
 		if not self.consumeTokenText("cases"): return self.backtrack()
 		if not self.consumeTokenText("{"): return self.emitError("Expected type cases.")
+		if self.consumeTokenText("default") and not self.parseTypeCase(): return self.emitError("Expected a type case.")
 		while self.parseTypeCase(): pass
 		if not self.consumeTokenText("}"): return self.emitError("Unclosed curly brace.")
 		return self.endNode()

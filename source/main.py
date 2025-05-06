@@ -4,7 +4,14 @@ from parser import *
 if __name__ == "__main__":
 	text = """
 	func main() {
-		if 1 {x = 1;} else if 1 {x = 2;} else if x {} else {}
+		var a uint32;
+		var b uint32;
+		for i uint32 in 0 {
+			if a == b {
+				break;
+			}
+			return x + 1;
+		}
 	}
 	"""
 	(tokens, lexingErrors) = lex(text)
