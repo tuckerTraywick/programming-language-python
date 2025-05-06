@@ -1,30 +1,32 @@
-expr
-	= infix(0)
+type
+	= tupleType
+	| arrayType
+	| pointerType
+	| functionType
+	| mutType
+	| basicType
 
-infix(p)
-	= prefix(p) *(infixOp(p) infix(q))
+tupleType
+	= "(" *(type ",") *type ")"
 
-prefix(p)
-	= prefixOp infix(q)
-	= basic
+arrayType
+	= "[" ?expression "]" ?type
 
-basic
-	= *("[" ?expr "]") literal *("(" ?expr *("," expr) ")")
+pointerType
+	= "&" ?type
 
+functionType
+	= "func" ?functionParameterList ?type
 
-basicExpression
-	= +("[" ?expression "]") ?literal *(parenthesizedExpressionList | bracketedExpressionList | fieldAccess)
-	| literal *(parenthesizedExpressionList | bracketedExpressionList | fieldAccess)
-	| +(parenthesizedExpressionList | bracketedExpressionList | fieldAccess)
+mutType
+	= "mut" type
 
-parenthesizedExpressionList
-	= "(" *(expression ",") ?expression ")"
+basicType
+	= identifier *("." identifier) *genericArguments
 
-bracketedExpressionList
-	= "[" *(expression ",") ?expression "]"
+genericArguments
+	= "generic <" *(genericArgument ",") ?genericArgument ">"
 
-bracedExpressionList
-	= "{" *(expression ",") ?expression "}"
-
-fieldAccess
-	= "." identifier
+genericArgument
+	= type
+	| expression
