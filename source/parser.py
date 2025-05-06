@@ -352,6 +352,7 @@ class _Parser:
 		if not self.consumeTokenType("identifier"): return self.emitError("Expected a struct name.")
 		self.parseStructBody()
 		self.parseTypeCases()
+		self.consumeTokenText(";")
 		return self.endNode()
 	
 	def parseStructDefinition(self, allowPub: bool=True) -> bool:
@@ -361,6 +362,7 @@ class _Parser:
 		if not self.consumeTokenType("identifier"): return self.emitError("Expected a struct name.")
 		self.parseStructBody()
 		self.parseTypeCases()
+		self.consumeTokenText(";")
 		return self.endNode()
 
 	def parseFunctionDefinition(self, allowPub: bool=True) -> bool:

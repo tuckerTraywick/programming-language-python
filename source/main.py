@@ -3,13 +3,13 @@ from parser import *
 
 if __name__ == "__main__":
 	text = """
-	trait Color {
+	struct Color {
 		r uint8;
 		g uint8;
 		b uint8;
 	} cases {
 		red; green; blue;
-		struct Rgb
+		struct Rgb;
 	}
 	"""
 	(tokens, lexingErrors) = lex(text)
