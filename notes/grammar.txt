@@ -27,7 +27,7 @@ assignment
 	= "=" expression
 
 structDefinition
-	= ?"pub" "struct" identifier ?genericParameters structBody
+	= ?"pub" "struct" identifier ?genericParameters structBody ?typeCases
 
 structBody
 	= "{" *((structField | usingType) ";") "}"
@@ -37,6 +37,15 @@ structField
 
 usingType
 	= "using" type *("," type)
+
+typeCases
+	= "cases" "{" typeCase "}"
+
+typeCase
+	= structDefinition
+	| traitDefinition
+	| usingType
+	| identifier ?assignment
 
 type
 	= tupleType

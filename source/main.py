@@ -3,11 +3,15 @@ from parser import *
 
 if __name__ == "__main__":
 	text = """
-	struct Dog {
-		using Animal;
-		name string;
-		pub age uint32;
-		using Noisy;
+	struct Animal cases {
+		using A;
+		a = 1;
+		struct Dog {
+			tag string;
+		}
+		struct Cat {
+			pub breed string;
+		}
 	}
 	"""
 	(tokens, lexingErrors) = lex(text)

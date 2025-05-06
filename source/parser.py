@@ -299,6 +299,26 @@ class _Parser:
 		if not self.consumeTokenText("}"): return self.emitError("Unclosed curly brace.")
 		return self.endNode()
 	
+	def parseEnumCase(self) -> bool:
+		self.beginNode("enum case")
+		if not self.consumeTokenType("identifier"): return self.backtrack()
+		self.parseAssignment()
+		if not self.consumeTokenText(";"): return self.emitError("Expected a semicolon.")
+		return self.endNode()
+
+	def parseTypeCase(self) -> bool:
+		if self.parseUsingStatement(): return True
+		if self.parseStructDefinition(False): return True
+		return self.parseEnumCase()
+	
+	def parseTypeCases(self) -> bool:
+		self.beginNode("type cases")
+		if not self.consumeTokenText("cases"): return self.backtrack()
+		if not self.consumeTokenText("{"): return self.emitError("Expected type cases.")
+		while self.parseTypeCase(): pass
+		if not self.consumeTokenText("}"): return self.emitError("Unclosed curly brace.")
+		return self.endNode()
+	
 	def parseUsingType(self) -> bool:
 		self.beginNode("using type")
 		if not self.consumeTokenText("using"): return self.backtrack()
@@ -328,7 +348,8 @@ class _Parser:
 		if not allowPub and self.consumeTokenText("pub"): return self.emitError("Access modifier not allowed here.")
 		if not self.consumeTokenText("struct"): return self.backtrack()
 		if not self.consumeTokenType("identifier"): return self.emitError("Expected a struct name.")
-		if not self.parseStructBody(): return self.emitError("Expected a struct body.")
+		self.parseStructBody()
+		self.parseTypeCases()
 		return self.endNode()
 
 	def parseFunctionDefinition(self, allowPub: bool=True) -> bool:
