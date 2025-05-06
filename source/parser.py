@@ -281,6 +281,32 @@ class _Parser:
 			if self.consumeTokenText("*"): break
 			if not self.consumeTokenType("identifier"): return self.emitError("Expected an identifier.")
 		return self.endNode()
+
+	def parseBlockStatement(self) -> bool:
+		if self.parseUsingStatement(): return True
+		if self.parseVariableDefinition(False): return True
+		if self.parseFunctionDefinition(False): return True
+		if self.parseBlock(): return True
+		if self.parseInfixExpression(0):
+			if not self.consumeTokenText(";"): return self.emitError("Expected a semicolon.")
+		return False
+	
+	def parseBlock(self) -> bool:
+		self.beginNode("block")
+		if not self.consumeTokenText("{"): return self.backtrack()
+		while self.parseBlockStatement(): pass
+		if not self.consumeTokenText("}"): return self.emitError("Unclosed curly brace.")
+		return self.endNode()
+
+	def parseFunctionDefinition(self, allowPub: bool=True) -> bool:
+		self.beginNode("function definition")
+		if not allowPub and self.consumeTokenText("pub"): return self.emitError("Access modifier not allowed here.")
+		if not self.consumeTokenText("func"): return self.backtrack()
+		if not self.consumeTokenType("identifier"): return self.emitError("Expected a function name.")
+		if not self.parseFunctionParameters(): return self.emitError("Expected function parameters.")
+		self.parseType()
+		if not self.parseBlock(): return self.emitError("Expected function body.")
+		return self.endNode()
 	
 	def parseAssignment(self) -> bool:
 		self.beginNode("assignment")
@@ -288,9 +314,9 @@ class _Parser:
 		if not self.parseInfixExpression(0): return self.emitError("Expected an expression.")
 		return self.endNode()
 	
-	def parseVariableDefinition(self) -> bool:
+	def parseVariableDefinition(self, allowPub: bool=True) -> bool:
 		self.beginNode("variable definition")
-		self.consumeTokenText("pub")
+		if not allowPub and self.consumeTokenText("pub"): return self.emitError("Access modifier not allowed here.")
 		if not self.consumeTokenText("var"): return self.backtrack()
 		if not self.consumeTokenType("identifier"): return self.emitError("Expected a variable name.")
 		if not self.parseType():
@@ -312,6 +338,8 @@ class _Parser:
 	def parseProgramStatement(self) -> bool:
 		if self.parseUsingStatement(): return True
 		if self.parseVariableDefinition(): return True
+		if self.parseFunctionDefinition(): return True
+		if self.parseBlock(): return True
 		return False
 
 	def parseNamespaceStatement(self) -> bool:
