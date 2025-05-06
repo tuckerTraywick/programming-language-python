@@ -281,6 +281,27 @@ class _Parser:
 			if self.consumeTokenText("*"): break
 			if not self.consumeTokenType("identifier"): return self.emitError("Expected an identifier.")
 		return self.endNode()
+	
+	def parseExpressionOrAssignment(self) -> bool:
+		self.beginNode("expression or assignment")
+		if not self.parseInfixExpression(0): return self.backtrack()
+		self.parseAssignment()
+		if not self.consumeTokenText(";"): return self.emitError("Expected a semicolon.")
+		return self.endNode()
+	
+	def parseElse(self) -> bool:
+		self.beginNode("else block")
+		if not self.consumeTokenText("else"): return self.backtrack()
+		if not (self.parseIfStatement() or self.parseBlock()): return self.emitError("Expected an if statement or a block.")
+		return self.endNode()
+	
+	def parseIfStatement(self) -> bool:
+		self.beginNode("if statement")
+		if not self.consumeTokenText("if"): return self.backtrack()
+		if not self.parseInfixExpression(0): return self.emitError("Expected an expression.")
+		if not self.parseBlock(): return self.emitError("Expected a block.")
+		while self.parseElse(): pass
+		return self.endNode()
 
 	def parseBlockStatement(self) -> bool:
 		if self.parseUsingStatement(): return True
@@ -289,8 +310,8 @@ class _Parser:
 		if self.parseStructDefinition(False): return True
 		if self.parseTraitDefinition(False): return True
 		if self.parseBlock(): return True
-		if self.parseInfixExpression(0):
-			if not self.consumeTokenText(";"): return self.emitError("Expected a semicolon.")
+		if self.parseIfStatement(): return True
+		if self.parseExpressionOrAssignment(): return True
 		return False
 	
 	def parseBlock(self) -> bool:
@@ -429,7 +450,6 @@ class _Parser:
 		if self.parseFunctionDefinition(): return True
 		if self.parseStructDefinition(): return True
 		if self.parseTraitDefinition(): return True
-		if self.parseBlock(): return True
 		return False
 
 	def parseNamespaceStatement(self) -> bool:

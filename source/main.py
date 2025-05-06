@@ -3,10 +3,9 @@ from parser import *
 
 if __name__ == "__main__":
 	text = """
-	struct List<type T, int32> {
-		x T;
+	func main() {
+		if 1 {x = 1;} else if 1 {x = 2;}
 	}
-	func generic<type T>(x T) T {}
 	"""
 	(tokens, lexingErrors) = lex(text)
 	print("---- TOKENS ----")

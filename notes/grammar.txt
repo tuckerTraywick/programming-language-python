@@ -21,7 +21,7 @@ variableDefinition
 	= ?"pub" "var" identifier (type ?assignment | assignment)
 
 functionDefinition
-	= ?"pub" "func" functionParameters ?type block
+	= ?"pub" "func" ?genericParameters functionParameters ?type block
 
 assignment
 	= "=" expression
