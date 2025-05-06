@@ -2,7 +2,7 @@ from lexer import *
 from parser import *
 
 if __name__ == "__main__":
-	text = "(x^f)(a)"
+	text = "x as int32->f()"
 	(tokens, lexingErrors) = lex(text)
 	print("---- TOKENS ----")
 	print("\n".join(map(str, tokens)))

@@ -29,64 +29,49 @@ class Node:
 
 class _Parser:
 	prefixPrecedences = {
-		"(": 1000,
-		"[": 1000,
-		"+": 40,
-		"-",
-		"*",
-		"&",
-		"~",
-		"not",
-		"new",
-		"drop",
-		"move",
+		"(": 2000,
+		"[": 2000,
+		"*": 1300,
+		"&": 1300,
+		# "new",
+		# "drop",
+		# "move",
+		"+": 1300,
+		"-": 1300,
+		"~": 1300,
+		"not": 400,
 	}
 	infixPrecedences = {
-		"+=",
-		"+",
-		"-=",
-		"->",
-		"-",
-		"*=",
-		"*",
-		"/=",
-		"/",
-		"%=",
-		"%",
-		"&=",
-		"&",
-		"|=",
-		"|",
-		"^=",
-		"^",
-		"~=",
-		"==",
-		"=",
-		"!=",
-		">>=",
-		">>"
-		">=",
-		">",
-		"<<=",
-		"<<",
-		"<=",
-		"<",
-		"(",
-		")",
-		"[",
-		"]",
-		"{",
-		"}",
-		".",
-		",",
-		"is",
-		"isnot",
-		"isa",
-		"isnota",
-		"as",
-		"and",
-		"or",
-		"xor",
+		".": 1500,
+		"(": 1500,
+		")": 0,
+		"[": 1500,
+		"]": 0,
+		"->": 1400,
+		"as": 1200,
+		"*": 1100,
+		"/": 1100,
+		"%": 1100,
+		"+": 1000,
+		"-": 1000,
+		"<<": 900,
+		">>": 900,
+		"&": 800,
+		"^": 700,
+		"|": 600,
+		"==": 500,
+		"!=": 500,
+		">=": 500,
+		">": 500,
+		"<=": 500,
+		"<": 500,
+		"is": 500,
+		"isnot": 500,
+		"isa": 500,
+		"isnota": 500,
+		"and": 300,
+		"xor": 200,
+		"or": 100,
 	}
 
 	def __init__(self, tokens: list[Token]):
@@ -121,14 +106,14 @@ class _Parser:
 		return False
 
 	def consumePrefixOperator(self, precedence: int) -> int:
-		if self.peekTokenType("operator", "bracket") and self.currentToken.text in self.prefixPrecedences and (newPrecedence := self.prefixPrecedences[self.currentToken.text]):
-			self.consumeTokenType("operator", "bracket")
+		if self.peekTokenType("operator", "keyword", "bracket") and self.currentToken.text in self.prefixPrecedences and (newPrecedence := self.prefixPrecedences[self.currentToken.text]):
+			self.consumeTokenType("operator", "keyword", "bracket")
 			return newPrecedence
 		return 0
 	
 	def consumeInfixOperator(self, precedence: int) -> int:
-		if self.peekTokenType("operator", "bracket") and self.currentToken.text in self.infixPrecedences and (newPrecedence := self.infixPrecedences[self.currentToken.text]) > precedence:
-			self.consumeTokenType("operator", "bracket")
+		if self.peekTokenType("operator", "keyword", "bracket") and self.currentToken.text in self.infixPrecedences and (newPrecedence := self.infixPrecedences[self.currentToken.text]) > precedence:
+			self.consumeTokenType("operator", "keyword", "bracket")
 			return newPrecedence
 		return 0
 	
@@ -154,6 +139,11 @@ class _Parser:
 	def emitError(self, type: str) -> bool:
 		self.errors.append(ParsingError(type))
 
+	def parseType(self) -> bool:
+		self.beginNode("type")
+		if not self.consumeTokenType("identifier"): return self.backtrack()
+		return self.endNode()
+
 	def parseBasicExpression(self) -> bool:
 		return self.consumeTokenType("number", "character", "string", "identifier")
 
@@ -166,9 +156,8 @@ class _Parser:
 		return True
 
 	def parsePrefixExpression(self, precedence: int) -> bool:
-		print("prefix", precedence)
 		self.beginNode("prefix expression")
-		# Parse a prefix expression or bracketed list.
+		# Parse a prefix expression or list.
 		if (newPrecedence := self.consumePrefixOperator(precedence)):
 			if self.currentNode.children[0].text == "(":
 				self.parseCommaList()
@@ -200,6 +189,8 @@ class _Parser:
 			elif self.currentNode.children[-1].text == "[":
 				self.parseCommaList()
 				if not self.consumeTokenText("]"): return self.emitError("Unclosed square bracket.")
+			elif self.currentNode.children[-1].text == "as":
+				if not self.parseType(): return self.emitError("Expected a type.")
 			elif not self.parseInfixExpression(newPrecedence):
 				return self.emitError("Expected an expression.")
 

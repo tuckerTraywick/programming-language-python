@@ -1,3 +1,22 @@
+1 as int32->f()   (1 as int32)->f()
+1->f() as int32   (1->f()) as int32
+f as Callback(x)
+
+. () []
+->
+* & + - ~
+as  // Doesn't care about precedence for rhs.
+
+*x->f()   *(x->(f()))
+a.b->f()   (a.b)->(f())
+*x as int32   (*x) as int32
+x->f() as int32   (x->(f())) as int32
+x as int32->f()   (x as int32)->f()
+
+
+
+
+
 // compilation units specify namespaces they depend on.
 // source files don't have to import things unless they want to shorten a name.
 // you cannot assign functions. to alias a function, do a using statement.

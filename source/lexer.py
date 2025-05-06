@@ -16,7 +16,7 @@ class Token:
 
 def lex(text: str) -> tuple[list[Token], list[LexingError]] | None:
 	whitespace: str = " \t\r\n"
-	keywords: set[str] = {
+	keywords: list[str] = [
 		"namespace",
 		"using",
 		"pub",
@@ -57,11 +57,11 @@ def lex(text: str) -> tuple[list[Token], list[LexingError]] | None:
 		"or",
 		"xor",
 		"not",
-		"new",
-		"drop",
-		"move",
-	}
-	operators: set[str] = {
+		# "new",
+		# "drop",
+		# "move",
+	]
+	operators: list[str] = [
 		"+=",
 		"+",
 		"-=",
@@ -100,7 +100,7 @@ def lex(text: str) -> tuple[list[Token], list[LexingError]] | None:
 		"}",
 		".",
 		",",
-	}
+	]
 
 	tokens: list[Token] = []
 	errors: list[LexingError] = []
@@ -161,7 +161,7 @@ def lex(text: str) -> tuple[list[Token], list[LexingError]] | None:
 			while i < len(text) and (text[i].isalnum() or text[i] == "_"):
 				currentToken += text[i]
 				i += 1
-			tokens.append(Token(currentToken if currentToken in keywords else "identifier", currentToken))
+			tokens.append(Token("keyword" if currentToken in keywords else "identifier", currentToken))
 			currentToken = ""
 		# Lex an operator.
 		else:
