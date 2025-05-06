@@ -286,6 +286,7 @@ class _Parser:
 		if self.parseUsingStatement(): return True
 		if self.parseVariableDefinition(False): return True
 		if self.parseFunctionDefinition(False): return True
+		if self.parseStructDefinition(False): return True
 		if self.parseBlock(): return True
 		if self.parseInfixExpression(0):
 			if not self.consumeTokenText(";"): return self.emitError("Expected a semicolon.")
@@ -297,6 +298,38 @@ class _Parser:
 		while self.parseBlockStatement(): pass
 		if not self.consumeTokenText("}"): return self.emitError("Unclosed curly brace.")
 		return self.endNode()
+	
+	def parseUsingType(self) -> bool:
+		self.beginNode("using type")
+		if not self.consumeTokenText("using"): return self.backtrack()
+		if not self.parseType(): return self.emitError("Expected a type.")
+		while self.consumeTokenText(","):
+			if not self.parseType(): return self.emitError("Expected a type.")
+		if not self.consumeTokenText(";"): return self.emitError("Expected a semicolon.")
+		return self.endNode()
+
+	def parseStructField(self) -> bool:
+		self.beginNode("struct field")
+		self.consumeTokenText("pub")
+		if not self.consumeTokenType("identifier"): return self.backtrack()
+		if not self.parseType(): return self.emitError("Expected a type.")
+		if not self.consumeTokenText(";"): return self.emitError("Expected a semicolon.")
+		return self.endNode()
+
+	def parseStructBody(self) -> bool:
+		self.beginNode("struct body")
+		if not self.consumeTokenText("{"): return self.backtrack()
+		while self.parseStructField() or self.parseUsingType(): pass
+		if not self.consumeTokenText("}"): return self.emitError("Unclosed curly brace.")
+		return self.endNode()
+	
+	def parseStructDefinition(self, allowPub: bool=True) -> bool:
+		self.beginNode("struct definintion")
+		if not allowPub and self.consumeTokenText("pub"): return self.emitError("Access modifier not allowed here.")
+		if not self.consumeTokenText("struct"): return self.backtrack()
+		if not self.consumeTokenType("identifier"): return self.emitError("Expected a struct name.")
+		if not self.parseStructBody(): return self.emitError("Expected a struct body.")
+		return self.endNode()
 
 	def parseFunctionDefinition(self, allowPub: bool=True) -> bool:
 		self.beginNode("function definition")
@@ -305,7 +338,7 @@ class _Parser:
 		if not self.consumeTokenType("identifier"): return self.emitError("Expected a function name.")
 		if not self.parseFunctionParameters(): return self.emitError("Expected function parameters.")
 		self.parseType()
-		if not self.parseBlock(): return self.emitError("Expected function body.")
+		if not self.parseBlock(): return self.emitError("Expected a function body.")
 		return self.endNode()
 	
 	def parseAssignment(self) -> bool:
@@ -339,6 +372,7 @@ class _Parser:
 		if self.parseUsingStatement(): return True
 		if self.parseVariableDefinition(): return True
 		if self.parseFunctionDefinition(): return True
+		if self.parseStructDefinition(): return True
 		if self.parseBlock(): return True
 		return False
 

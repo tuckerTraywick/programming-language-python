@@ -3,10 +3,11 @@ from parser import *
 
 if __name__ == "__main__":
 	text = """
-	func f() {
-		func g() {
-			var x = 1;
-		}
+	struct Dog {
+		using Animal;
+		name string;
+		pub age uint32;
+		using Noisy;
 	}
 	"""
 	(tokens, lexingErrors) = lex(text)

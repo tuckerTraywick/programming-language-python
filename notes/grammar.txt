@@ -20,8 +20,23 @@ qualifiedName
 variableDefinition
 	= ?"pub" "var" identifier (type ?assignment | assignment)
 
+functionDefinition
+	= ?"pub" "func" functionParameters ?type block
+
 assignment
 	= "=" expression
+
+structDefinition
+	= ?"pub" "struct" identifier ?genericParameters structBody
+
+structBody
+	= "{" *((structField | usingType) ";") "}"
+
+structField
+	= ?"pub" identifier type
+
+usingType
+	= "using" type *("," type)
 
 type
 	= tupleType
@@ -41,9 +56,9 @@ pointerType
 	= "&" ?type
 
 functionType
-	= "func" ?functionParameterList ?type
+	= "func" ?functionParameters ?type
 
-functionParameterList
+functionParameters
 	= "(" *(functionParameter ",") ?functionParameter ")"
 
 functionParameter
