@@ -6,6 +6,10 @@ namespaceStatement
 
 programStatement
 	= usingStatement
+	| variableDefinition
+	| functionDefinition
+	| structDefinition
+	| traitDefinition
 
 usingStatement
 	= "using" qualifiedName *("," ?"." qualifiedName)
@@ -13,7 +17,11 @@ usingStatement
 qualifiedName
 	= identifier *("." identifier)
 
+variableDefinition
+	= ?"pub" "var" identifier (type ?assignment | assignment)
 
+assignment
+	= "=" expression
 
 type
 	= tupleType

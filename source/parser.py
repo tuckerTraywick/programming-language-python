@@ -282,6 +282,24 @@ class _Parser:
 			if not self.consumeTokenType("identifier"): return self.emitError("Expected an identifier.")
 		return self.endNode()
 	
+	def parseAssignment(self) -> bool:
+		self.beginNode("assignment")
+		if not self.consumeTokenText("="): return self.backtrack()
+		if not self.parseInfixExpression(0): return self.emitError("Expected an expression.")
+		return self.endNode()
+	
+	def parseVariableDefinition(self) -> bool:
+		self.beginNode("variable definition")
+		self.consumeTokenText("pub")
+		if not self.consumeTokenText("var"): return self.backtrack()
+		if not self.consumeTokenType("identifier"): return self.emitError("Expected a variable name.")
+		if not self.parseType():
+			if not self.parseAssignment(): return self.emitError("Expected a type or an assignment.")
+		else:
+			self.parseAssignment()
+		if not self.consumeTokenText(";"): return self.emitError("Expected a semicolon.")
+		return self.endNode()
+	
 	def parseUsingStatement(self) -> bool:
 		self.beginNode("using statement")
 		if not self.consumeTokenText("using"): return self.backtrack()
@@ -290,17 +308,18 @@ class _Parser:
 			if not self.parseQualifiedName(): return self.emitError("Expected a qualified name.")
 		if not self.consumeTokenText(";"): return self.emitError("Expected a semicolon.")
 		return self.endNode()
-	
+
 	def parseProgramStatement(self) -> bool:
-		self.beginNode("program statement")
-		if self.parseUsingStatement(): return self.endNode()
+		if self.parseUsingStatement(): return True
+		if self.parseVariableDefinition(): return True
 		return False
 
 	def parseNamespaceStatement(self) -> bool:
 		self.beginNode("namespace statement")
+		self.consumeTokenText("pub")
 		if not self.consumeTokenText("namespace"): return self.backtrack()
 		if not self.parseQualifiedName(): return self.emitError("Expected a namespace name.")
-		if self.currentNode.children[1].children[-1].text == "*": return self.emitError("Namespace name cannot contain `*`.")
+		if self.currentNode.children[-1].children[-1].text == "*": return self.emitError("Namespace name cannot contain `*`.")
 		if not self.consumeTokenText(";"): return self.emitError("Expected a semicolon.")
 		return self.endNode()
 	

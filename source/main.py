@@ -2,7 +2,7 @@ from lexer import *
 from parser import *
 
 if __name__ == "__main__":
-	text = "namespace a.b; using a.*; using b.c;"
+	text = "pub namespace a.b; pub var a = ; using x;"
 	(tokens, lexingErrors) = lex(text)
 	print("---- TOKENS ----")
 	print("\n".join(map(str, tokens)))
