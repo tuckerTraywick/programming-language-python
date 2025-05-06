@@ -103,14 +103,21 @@ def lex(text: str) -> tuple[list[Token], list[LexingError]] | None:
 		":",
 		";",
 	]
+	lineComment: str = "//"
 
 	tokens: list[Token] = []
 	errors: list[LexingError] = []
 	currentToken: str = ""
 	i: int = 0
 	while i < len(text):
+		# Skip whitespace.
 		if text[i] in whitespace:
 			i += 1
+			continue
+		# Skip comments.
+		if text.startswith(lineComment, i):
+			while i < len(text) and text[i] != "\n":
+				i += 1
 			continue
 		
 		# Lex a number.
