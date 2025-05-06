@@ -1,3 +1,20 @@
+program
+	= ?namespaceStatement *programStatement
+
+namespaceStatement
+	= "namspace" qualifiedName
+
+programStatement
+	= usingStatement
+
+usingStatement
+	= "using" qualifiedName *("," ?"." qualifiedName)
+
+qualifiedName
+	= identifier *("." identifier)
+
+
+
 type
 	= tupleType
 	| arrayType

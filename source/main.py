@@ -2,7 +2,7 @@ from lexer import *
 from parser import *
 
 if __name__ == "__main__":
-	text = "x as func(a mut []owned<&string>, b int32) int32"
+	text = "namespace a.b; using a.*; using b.c;"
 	(tokens, lexingErrors) = lex(text)
 	print("---- TOKENS ----")
 	print("\n".join(map(str, tokens)))

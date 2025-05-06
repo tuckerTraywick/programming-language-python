@@ -274,9 +274,41 @@ class _Parser:
 			return True
 		return self.endNode()
 	
+	def parseQualifiedName(self) -> bool:
+		self.beginNode("qualified name")
+		if not self.consumeTokenType("identifier"): return self.backtrack()
+		while self.consumeTokenText("."):
+			if self.consumeTokenText("*"): break
+			if not self.consumeTokenType("identifier"): return self.emitError("Expected an identifier.")
+		return self.endNode()
+	
+	def parseUsingStatement(self) -> bool:
+		self.beginNode("using statement")
+		if not self.consumeTokenText("using"): return self.backtrack()
+		if not self.parseQualifiedName(): return self.emitError("Expected a qualified name.")
+		while self.consumeTokenText(","):
+			if not self.parseQualifiedName(): return self.emitError("Expected a qualified name.")
+		if not self.consumeTokenText(";"): return self.emitError("Expected a semicolon.")
+		return self.endNode()
+	
+	def parseProgramStatement(self) -> bool:
+		self.beginNode("program statement")
+		if self.parseUsingStatement(): return self.endNode()
+		return False
+
+	def parseNamespaceStatement(self) -> bool:
+		self.beginNode("namespace statement")
+		if not self.consumeTokenText("namespace"): return self.backtrack()
+		if not self.parseQualifiedName(): return self.emitError("Expected a namespace name.")
+		if self.currentNode.children[1].children[-1].text == "*": return self.emitError("Namespace name cannot contain `*`.")
+		if not self.consumeTokenText(";"): return self.emitError("Expected a semicolon.")
+		return self.endNode()
+	
 	def parseProgram(self):
 		self.beginNode("program")
-		self.parseInfixExpression(0)
+		self.parseNamespaceStatement()
+		while self.parseProgramStatement(): pass
+		if self.currentTokenIndex < len(self.tokens): return self.emitError("Tokens left after parsing.")
 		self.endNode()
 
 def parse(tokens: list[Token]) -> tuple[Node, list[ParsingError]]:
