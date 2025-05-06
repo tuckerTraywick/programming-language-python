@@ -287,6 +287,7 @@ class _Parser:
 		if self.parseVariableDefinition(False): return True
 		if self.parseFunctionDefinition(False): return True
 		if self.parseStructDefinition(False): return True
+		if self.parseTraitDefinition(False): return True
 		if self.parseBlock(): return True
 		if self.parseInfixExpression(0):
 			if not self.consumeTokenText(";"): return self.emitError("Expected a semicolon.")
@@ -309,6 +310,7 @@ class _Parser:
 	def parseTypeCase(self) -> bool:
 		if self.parseUsingStatement(): return True
 		if self.parseStructDefinition(False): return True
+		if self.parseTraitDefinition(False): return True
 		return self.parseEnumCase()
 	
 	def parseTypeCases(self) -> bool:
@@ -341,6 +343,15 @@ class _Parser:
 		if not self.consumeTokenText("{"): return self.backtrack()
 		while self.parseStructField() or self.parseUsingType(): pass
 		if not self.consumeTokenText("}"): return self.emitError("Unclosed curly brace.")
+		return self.endNode()
+	
+	def parseTraitDefinition(self, allowPub: bool=True) -> bool:
+		self.beginNode("trait definintion")
+		if not allowPub and self.consumeTokenText("pub"): return self.emitError("Access modifier not allowed here.")
+		if not self.consumeTokenText("trait"): return self.backtrack()
+		if not self.consumeTokenType("identifier"): return self.emitError("Expected a struct name.")
+		self.parseStructBody()
+		self.parseTypeCases()
 		return self.endNode()
 	
 	def parseStructDefinition(self, allowPub: bool=True) -> bool:
@@ -394,6 +405,7 @@ class _Parser:
 		if self.parseVariableDefinition(): return True
 		if self.parseFunctionDefinition(): return True
 		if self.parseStructDefinition(): return True
+		if self.parseTraitDefinition(): return True
 		if self.parseBlock(): return True
 		return False
 
