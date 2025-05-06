@@ -3,7 +3,7 @@ type
 	| arrayType
 	| pointerType
 	| functionType
-	| mutType
+	| mutableType
 	| basicType
 
 tupleType
@@ -18,7 +18,13 @@ pointerType
 functionType
 	= "func" ?functionParameterList ?type
 
-mutType
+functionParameterList
+	= "(" *(functionParameter ",") ?functionParameter ")"
+
+functionParameter
+	= identifier type
+
+mutableType
 	= "mut" type
 
 basicType

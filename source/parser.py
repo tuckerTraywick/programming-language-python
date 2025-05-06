@@ -139,11 +139,84 @@ class _Parser:
 	def emitError(self, type: str) -> bool:
 		self.errors.append(ParsingError(type))
 
-	def parseType(self) -> bool:
-		self.beginNode("type")
-		if not self.consumeTokenType("identifier"): return self.backtrack()
+	def parseGenericArgument(self) -> bool:
+		return self.parseType() or self.parseInfixExpression(0)
+
+	def parseGenericArguments(self) -> bool:
+		self.beginNode("generic arguments")
+		if not self.consumeTokenText("generic <"): return self.backtrack()
+		while self.parseGenericArgument():
+			if not self.consumeTokenText(","): break
+		if not self.consumeTokenText(">"): return self.emitError("Unclosed angle bracket.")
 		return self.endNode()
 
+	def parseBasicType(self) -> bool:
+		self.beginNode("basic type")
+		if not self.consumeTokenType("identifier"): return self.backtrack()
+		while self.consumeTokenText("."):
+			if not self.consumeTokenType("identifier"): return self.emitError("Expected an identifier.")
+		self.parseGenericArguments()
+		return self.endNode()
+	
+	def parseMutableType(self) -> bool:
+		self.beginNode("mutable type")
+		if not self.consumeTokenText("mut"): return self.backtrack()
+		self.parseType()
+		return self.endNode()
+
+	def parseFunctionParameter(self) -> bool:
+		self.beginNode("function parameter")
+		if not self.consumeTokenType("identifier"): return self.backtrack()
+		self.parseType()
+		return self.endNode()
+	
+	def parseFunctionParameters(self) -> bool:
+		self.beginNode("function parameters")
+		if not self.consumeTokenText("("): return self.backtrack()
+		while self.parseFunctionParameter():
+			if not self.consumeTokenText(","): break
+		if not self.consumeTokenText(")"): return self.emitError("Unclosed parenthesis.")
+		return self.endNode()
+
+	def parseFunctionType(self) -> bool:
+		self.beginNode("function type")
+		if not self.consumeTokenText("func"): return self.backtrack()
+		# TODO: Accept function types without parameters?
+		if not self.parseFunctionParameters(): return self.emitError("Expected function parameters")
+		self.parseType()
+		return self.endNode()
+	
+	def parsePointerType(self) -> bool:
+		self.beginNode("pointer type")
+		if not self.consumeTokenText("&"): return self.backtrack()
+		self.parseType()
+		return self.endNode()
+	
+	def parseArrayType(self) -> bool:
+		self.beginNode("array type")
+		if not self.consumeTokenText("["): return self.backtrack()
+		self.parseInfixExpression(0)
+		if not self.consumeTokenText("]"): return self.emitError("Unclosed square bracket.")
+		self.parseType()
+		return self.endNode()
+
+	def parseTupleType(self) -> bool:
+		self.beginNode("tuple type")
+		if not self.consumeTokenText("("): return self.backtrack()
+		while self.parseType():
+			if not self.consumeTokenText(","): break
+		if not self.consumeTokenText(")"): return self.emitError("Unclosed parenthesis.")
+		return self.endNode()
+
+	def parseType(self) -> bool:
+		if self.parseTupleType(): return True
+		if self.parseArrayType(): return True
+		if self.parsePointerType(): return True
+		if self.parseFunctionType(): return True
+		if self.parseMutableType(): return True
+		if self.parseBasicType(): return True
+		return False
+	
 	def parseBasicExpression(self) -> bool:
 		return self.consumeTokenType("number", "character", "string", "identifier")
 
