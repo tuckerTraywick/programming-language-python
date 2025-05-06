@@ -292,9 +292,14 @@ class _Parser:
 	def parseElse(self) -> bool:
 		self.beginNode("else block")
 		if not self.consumeTokenText("else"): return self.backtrack()
-		if self.consumeTokenText("if"):
-			self.currentNode.type = "else-if block"
-			if not self.parseInfixExpression(0): return self.emitError("Expected an expression.")
+		if not self.parseBlock(): return self.emitError("Expected a block.")
+		return self.endNode()
+	
+	def parseElseIf(self) -> bool:
+		self.beginNode("else-if block")
+		if not self.consumeTokenText("else"): return self.backtrack()
+		if not self.consumeTokenText("if"): return self.backtrack()
+		if not self.parseInfixExpression(0): return self.emitError("Expected an expression.")
 		if not self.parseBlock(): return self.emitError("Expected a block.")
 		return self.endNode()
 	
@@ -303,7 +308,8 @@ class _Parser:
 		if not self.consumeTokenText("if"): return self.backtrack()
 		if not self.parseInfixExpression(0): return self.emitError("Expected an expression.")
 		if not self.parseBlock(): return self.emitError("Expected a block.")
-		while self.parseElse(): pass
+		while self.parseElseIf(): pass
+		self.parseElse()
 		return self.endNode()
 
 	def parseBlockStatement(self) -> bool:

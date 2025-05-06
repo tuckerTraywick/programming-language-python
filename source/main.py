@@ -4,7 +4,7 @@ from parser import *
 if __name__ == "__main__":
 	text = """
 	func main() {
-		if 1 {x = 1;} else if 1 {x = 2;} else {}
+		if 1 {x = 1;} else if 1 {x = 2;} else if x {} else {}
 	}
 	"""
 	(tokens, lexingErrors) = lex(text)
