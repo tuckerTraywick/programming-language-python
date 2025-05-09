@@ -3,7 +3,7 @@ from parser import *
 
 if __name__ == "__main__":
 	text = """
-	var a int32;//hello
+	var a int32;
 	func main() {
 		var a uint32;
 		var b uint32;

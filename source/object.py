@@ -1,5 +1,6 @@
 class Symbol:
-	pass
+	def __init__(self, name: str, type: str):
+		pass
 
 class Object:
 	def __init__(self):
