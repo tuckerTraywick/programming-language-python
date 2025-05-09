@@ -1,7 +1,7 @@
 from lexer import *
 
 # An error encountered during parsing.
-class ParsingError:
+class ParserError:
 	def __init__(self, message: str):
 		self.message = message
 
@@ -79,7 +79,7 @@ class _Parser:
 		self.currentTokenIndex: int = 0
 		self.tree: Node = None
 		self.currentNode: Node = self.tree
-		self.errors: list[ParsingError] = []
+		self.errors: list[ParserError] = []
 
 	@property
 	def currentToken(self) -> Token:
@@ -137,7 +137,7 @@ class _Parser:
 		return False
 	
 	def emitError(self, type: str) -> bool:
-		self.errors.append(ParsingError(type))
+		self.errors.append(ParserError(type))
 
 	def parseGenericArgument(self) -> bool:
 		return self.parseType() or self.parseInfixExpression(0)
@@ -533,7 +533,7 @@ class _Parser:
 		if self.currentTokenIndex < len(self.tokens): return self.emitError("Tokens left after parsing.")
 		self.endNode()
 
-def parse(tokens: list[Token]) -> tuple[Node, list[ParsingError]]:
+def parse(tokens: list[Token]) -> tuple[Node, list[ParserError]]:
 	parser: _Parser = _Parser(tokens)
 	parser.parseProgram()
 	return (parser.tree, parser.errors)

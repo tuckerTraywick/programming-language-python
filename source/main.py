@@ -1,29 +1,22 @@
 from lexer import *
 from parser import *
+from object import *
 
 if __name__ == "__main__":
-	text = """
-	var a int32;
-	func main() {
-		var a uint32;
-		var b uint32;
-		for i uint32 in 0 {
-			if a == b {
-				break;
-			}
-			return x + 1;
-		}
-	}
-	method f();
-	func f() {}
-	"""
-	(tokens, lexingErrors) = lex(text)
+	text = """ pub namespace hello; """
+	(tokens, lexerErrors) = lex(text)
 	print("---- TOKENS ----")
 	print("\n".join(map(str, tokens)))
-	print("\n---- LEXING ERRORS ----")
-	print("\n".join(map(str, lexingErrors)))
-	(tree, parsingErrors) = parse(tokens)
+	print("\n---- LEXER ERRORS ----")
+	print("\n".join(map(str, lexerErrors)))
+	(tree, parserErrors) = parse(tokens)
 	print("\n---- SYNTAX TREE ----")
 	tree.prettyPrint()
-	print("\n---- PARSING ERRORS ----")
-	print("\n".join(map(str, parsingErrors)))
+	print("\n---- PARSER ERRORS ----")
+	print("\n".join(map(str, parserErrors)))
+
+	object = Object()
+	compilerErrors = []
+	validateTree(tree, object, compilerErrors)
+	for name in object.publicSymbols.keys():
+		print(f"{name}: {str(object.getPublicSymbol(name))}")

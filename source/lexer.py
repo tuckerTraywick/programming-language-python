@@ -1,4 +1,4 @@
-class LexingError:
+class LexerError:
 	def __init__(self, message: str, text: str):
 		self.message = message
 		self.text = text
@@ -14,7 +14,7 @@ class Token:
 	def __repr__(self):
 		return f"{self.type} `{self.text}`"
 
-def lex(text: str) -> tuple[list[Token], list[LexingError]] | None:
+def lex(text: str) -> tuple[list[Token], list[LexerError]] | None:
 	whitespace: str = " \t\r\n"
 	keywords: list[str] = [
 		"namespace",
@@ -107,7 +107,7 @@ def lex(text: str) -> tuple[list[Token], list[LexingError]] | None:
 	lineComment: str = "//"
 
 	tokens: list[Token] = []
-	errors: list[LexingError] = []
+	errors: list[LexerError] = []
 	currentToken: str = ""
 	i: int = 0
 	while i < len(text):
@@ -145,7 +145,7 @@ def lex(text: str) -> tuple[list[Token], list[LexingError]] | None:
 				i += 1
 				tokens.append(Token("character", currentToken))
 			else:
-				errors.append(LexingError("Unclosed single quote.", currentToken))
+				errors.append(LexerError("Unclosed single quote.", currentToken))
 			currentToken = ""
 		# Lex a string.
 		elif text[i] == '"':
@@ -164,7 +164,7 @@ def lex(text: str) -> tuple[list[Token], list[LexingError]] | None:
 				i += 1
 				tokens.append(Token("string", currentToken))
 			else:
-				errors.append(LexingError("Unclosed double quote.", currentToken))
+				errors.append(LexerError("Unclosed double quote.", currentToken))
 			currentToken = ""
 		# Lex an identifier or keyword.
 		elif text[i].isalpha() or text[i] == "_":
@@ -187,6 +187,6 @@ def lex(text: str) -> tuple[list[Token], list[LexingError]] | None:
 				while i < len(text) and text[i] != "\n":
 					currentToken += text[i]
 					i += 1
-				errors.append(LexingError("Invalid token.", currentToken))
+				errors.append(LexerError("Invalid token.", currentToken))
 				currentToken = ""
 	return (tokens, errors)
