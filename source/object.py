@@ -6,6 +6,9 @@ class CompilerError:
 	def __init__(self, message: str):
 		self.message = message
 
+	def __repr__(self) -> str:
+		return self.message
+
 class Symbol:
 	def __init__(self, name: str, visibility: str, type: str, value: Token | Node):
 		self.name = name
@@ -41,11 +44,14 @@ class Object:
 			namespace = namespace[identifier]
 		return namespace
 	
-	def getSymbol(self, name: str) -> Symbol | None:
-		return self.getPublicSymbol(name) or self.getPrivateSymbol(name)
+	def getSymbol(self, name: str) -> Any | None:
+		symbol = self.getPublicSymbol(name)
+		if symbol is not None:
+			return symbol
+		return self.getPrivateSymbol(name)
 	
 	def addPublicSymbol(self, name: str, value: Any) -> bool:
-		if self.getPublicSymbol(name):
+		if self.getPublicSymbol(name) is not None:
 			return True
 		identifiers: list[str] = name.split(".")
 		namespace = self.publicSymbols
@@ -56,7 +62,7 @@ class Object:
 		return False
 	
 	def addPrivateSymbol(self, name: str, value: Any) -> bool:
-		if self.getPrivateSymbol(name):
+		if self.getPrivateSymbol(name) is not None:
 			return True
 		identifiers: list[str] = name.split(".")
 		namespace = self.privateSymbols
@@ -79,7 +85,7 @@ def validateTree(tree: Node | Token,  object: Object, errors: list[CompilerError
 						return True
 			case "namespace statement":
 				namespaceName = qualifiedNameToStr(tree.children[-2])
-				if object.getSymbol(namespaceName):
+				if object.getSymbol(namespaceName) is not None:
 					errors.append(CompilerError(f"Redefinition of namespace `{namespaceName}`."))
 					return True
 				if tree.children[0].text == "pub":

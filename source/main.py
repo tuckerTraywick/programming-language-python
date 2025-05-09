@@ -17,9 +17,13 @@ if __name__ == "__main__":
 
 	object = Object()
 	compilerErrors = []
+	print("\n---- SYMBOLS ----")
+	validateTree(tree, object, compilerErrors)
 	validateTree(tree, object, compilerErrors)
 	for name in object.publicSymbols.keys():
 		print(f"{name}: {str(object.getPublicSymbol(name))}")
 	for name in object.privateSymbols.keys():
 		print(f"{name}: {str(object.getPrivateSymbol(name))}")
-	
+	print("\n---- COMPILER ERRORS ----")
+	for error in compilerErrors:
+		print(error)	
