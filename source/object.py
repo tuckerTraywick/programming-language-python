@@ -34,7 +34,7 @@ class Object:
 
 	def getPrivateSymbol(self, name: str) -> Any | None:
 		identifiers: list[str] = name.split(".")
-		namespace = self.publicSymbols
+		namespace = self.privateSymbols
 		for identifier in identifiers:
 			if identifier not in namespace:
 				return None
