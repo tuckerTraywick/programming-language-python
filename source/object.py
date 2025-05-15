@@ -3,32 +3,32 @@ from lexer import *
 from parser import *
 
 class CompilerError:
-	def __init__(self, message: str):
+	def __init__(self, message):
 		self.message = message
 
-	def __repr__(self) -> str:
+	def __repr__(self):
 		return self.message
 
 class Symbol:
-	def __init__(self, name: str, visibility: str, type: str, value: Token | Node):
+	def __init__(self, name, visibility, type, value):
 		self.name = name
 		self.visibility = visibility
 		self.type = type
 		self.value = value
 
-	def __repr__(self) -> str:
+	def __repr__(self):
 		return self.name
 	
-	def __eq__(self, other: "Symbol") -> bool:
+	def __eq__(self, other):
 		return self.visibility == other.visibility and self.name == other.name and self.type == other.type 
 
 class Object:
 	def __init__(self):
-		self.publicSymbols: dict[str, Any] = {}
-		self.privateSymbols: dict[str, Any] = {}
+		self.publicSymbols = {}
+		self.privateSymbols = {}
 
-	def getPublicSymbol(self, name: str) -> Any | None:
-		identifiers: list[str] = name.split(".")
+	def getPublicSymbol(self, name):
+		identifiers = name.split(".")
 		namespace = self.publicSymbols
 		for identifier in identifiers:
 			if identifier not in namespace:
@@ -36,8 +36,8 @@ class Object:
 			namespace = namespace[identifier]
 		return namespace
 
-	def getPrivateSymbol(self, name: str) -> Any | None:
-		identifiers: list[str] = name.split(".")
+	def getPrivateSymbol(self, name):
+		identifiers = name.split(".")
 		namespace = self.privateSymbols
 		for identifier in identifiers:
 			if identifier not in namespace:
@@ -45,16 +45,16 @@ class Object:
 			namespace = namespace[identifier]
 		return namespace
 	
-	def getSymbol(self, name: str) -> Any | None:
+	def getSymbol(self, name):
 		symbol = self.getPublicSymbol(name)
 		if symbol is not None:
 			return symbol
 		return self.getPrivateSymbol(name)
 	
-	def addPublicSymbol(self, name: str, value: Any) -> bool:
+	def addPublicSymbol(self, name, value):
 		if self.getPublicSymbol(name) is not None:
 			return True
-		identifiers: list[str] = name.split(".")
+		identifiers = name.split(".")
 		namespace = self.publicSymbols
 		for identifier in identifiers[:-1]:
 			namespace[identifier] = {}
@@ -62,10 +62,10 @@ class Object:
 		namespace[identifiers[-1]] = value
 		return False
 	
-	def addPrivateSymbol(self, name: str, value: Any) -> bool:
+	def addPrivateSymbol(self, name, value):
 		if self.getPrivateSymbol(name) is not None:
 			return True
-		identifiers: list[str] = name.split(".")
+		identifiers = name.split(".")
 		namespace = self.privateSymbols
 		for identifier in identifiers[:-1]:
 			namespace[identifier] = {}
@@ -75,19 +75,19 @@ class Object:
 
 class Scope:
 	def __init__(self):
-		self.symbols: map[str, Symbol] = {}
+		self.symbols = {}
 
-	def getSymbol(self, name: str) -> Symbol | None:
+	def getSymbol(self, name):
 		return self.symbols.get(name)
 
-	def addSymbol(self, symbol: Symbol) -> bool:
+	def addSymbol(self, symbol):
 		if self.getSymbol(symbol.name) is not None:
 			return True
 		self.symbols[symbol.name] = symbol
 
 class Environment:
 	def __init__(self):
-		self.scopes: list[Scope] = []
+		self.scopes = []
 
 	def pushScope(self):
 		self.scopes.append(Scope())
@@ -95,40 +95,80 @@ class Environment:
 	def popScope(self):
 		self.scopes.pop()
 
-	def getSymbol(self, name: str) -> Any | None:
+	def getSymbol(self, name):
 		for i in range(len(self.scopes) - 1, -1, -1):
 			symbol = self.scopes[i].getSymbol(name)
 			if symbol is not None:
 				return symbol
 		return None
 	
-	def addSymbol(self, symbol: Symbol) -> bool:
+	def addSymbol(self, symbol):
 		if self.getSymbol(symbol.name) is not None:
 			return True
 		self.scopes[-1].addSymbol(symbol)
 		return False
 
-def resolveName(name: str, object: Object, environment: Environment) -> Any | None:
-	pass
+class Visitor:
+	def __init__(self):
+		self.object = None
+		self.environment = None
+		self.errors = []
+		self.currentNamespace = ""
 
-def qualifiedNameToStr(name: Node) -> str:
-	return ".".join(child.text for child in name.children)
+	def resolveSymbol(self, name):
+		value = self.environment.getSymbol(name)
+		if value is not None:
+			return value
+		value = self.object.getPrivateSymbol(name)
+		if value is not None:
+			return value
+		return self.object.getPublicSymbol(name)
 
-# Returns True on error.
-def validateTree(tree: Node | Token,  object: Object, errors: list[CompilerError]) -> bool:
-	if isinstance(tree, Node):
+	def validateProgramStatement(self, tree):
 		match tree.type:
-			case "program":
-				for child in tree.children:
-					if validateTree(child, object, errors):
-						return True
 			case "namespace statement":
-				namespaceName = qualifiedNameToStr(tree.children[-2])
-				if object.getSymbol(namespaceName) is not None:
-					errors.append(CompilerError(f"Redefinition of namespace `{namespaceName}`."))
+				self.currentNamespace = qualifiedNameToStr(tree.children[-2])
+				if self.object.getSymbol(self.currentNamespace) is not None:
+					self.errors.append(CompilerError(f"Redefinition of namespace `{self.currentNamespace}`."))
 					return True
 				if tree.children[0].text == "pub":
-					object.addPublicSymbol(namespaceName, {})
+					self.object.addPublicSymbol(self.currentNamespace, {})
 				else:
-					object.addPrivateSymbol(namespaceName, {})
-	return False
+					self.object.addPrivateSymbol(self.currentNamespace, {})
+			case "using statement":
+				pass
+			case "variable definition":
+				# pub var name type = value ;
+				if tree.children[0].text == "pub":
+					qualifiedName = self.currentNamespace + "." + tree.children[2].text
+					type = tree.children[3]
+					value = None
+					if len(tree.children) >= 7:
+						value = tree.children[5]
+					if self.object.getSymbol(qualifiedName):
+						self.errors.append(CompilerError(f"Redefinition of symbol `{qualifiedName}`."))
+						return True
+					self.object.addPublicSymbol(qualifiedName, Symbol(qualifiedName, "pub", type, value))
+		return False
+
+	def validate(self, tree):
+		self.object = Object()
+		self.environment = Environment()
+		self.environment.pushScope()
+		self.errors = []
+		self.currentNamespace = ""
+		if isinstance(tree, Node):
+			match tree.type:
+				case "program":
+					for child in tree.children:
+						if self.validateProgramStatement(child):
+							return True
+		return False
+
+def qualifiedNameToStr(name):
+	return ".".join(child.text for child in name.children)
+
+def validate(tree):
+	visitor = Visitor()
+	visitor.validate(tree)
+	return (visitor.object, visitor.errors)

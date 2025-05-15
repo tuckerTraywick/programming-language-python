@@ -1,22 +1,22 @@
 class LexerError:
-	def __init__(self, message: str, text: str):
+	def __init__(self, message, text):
 		self.message = message
 		self.text = text
 
-	def __repr__(self) -> str:
+	def __repr__(self) :
 		return f"{self.message} `{self.text}`"
 
 class Token:
-	def __init__(self, type: str, text: str):
+	def __init__(self, type, text):
 		self.type = type
 		self.text = text
 
 	def __repr__(self):
 		return f"{self.type} `{self.text}`"
 
-def lex(text: str) -> tuple[list[Token], list[LexerError]] | None:
-	whitespace: str = " \t\r\n"
-	keywords: list[str] = [
+def lex(text):
+	whitespace = " \t\r\n"
+	keywords = [
 		"namespace",
 		"using",
 		"pub",
@@ -62,7 +62,7 @@ def lex(text: str) -> tuple[list[Token], list[LexerError]] | None:
 		# "drop",
 		# "move",
 	]
-	operators: list[str] = [
+	operators = [
 		"+=",
 		"+",
 		"-=",
@@ -104,12 +104,12 @@ def lex(text: str) -> tuple[list[Token], list[LexerError]] | None:
 		":",
 		";",
 	]
-	lineComment: str = "//"
+	lineComment = "//"
 
-	tokens: list[Token] = []
-	errors: list[LexerError] = []
-	currentToken: str = ""
-	i: int = 0
+	tokens = []
+	errors = []
+	currentToken = ""
+	i = 0
 	while i < len(text):
 		# Skip whitespace.
 		if text[i] in whitespace:

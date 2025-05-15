@@ -1,5 +1,5 @@
-1 as int32->f()   (1 as int32)->f()
-1->f() as int32   (1->f()) as int32
+1 as Int32->f()   (1 as Int32)->f()
+1->f() as Int32   (1->f()) as Int32
 f as Callback(x)
 
 . () []
@@ -9,11 +9,19 @@ as  // Doesn't care about precedence for rhs since it parses a type and not an e
 
 *x->f()   *(x->(f()))
 a.b->f()   (a.b)->(f())
-*x as int32   (*x) as int32
-x->f() as int32   (x->(f())) as int32
-x as int32->f()   (x as int32)->f()
+*x as Int32   (*x) as Int32
+x->f() as Int32   (x->(f())) as Int32
+x as Int32->f()   (x as Int32)->f()
 
-optional<owned<&int32>>
+Maybe<Owned<&Int32>>
+
+
+
+
+
+pub var a Int32 = 1
+
+
 
 
 
@@ -42,17 +50,17 @@ using std.io
 	.printLine,
 	.inputLine
 using myIo = std.io // explicit export.
-pub using std.io.* // export all.
+pub using std.io.* // export All.
 pub using myPrint = std.io.printLine // explicit function export.
 pub using myPi = std.math.pi // same variable with same address.
 pub var myPi = std.math.pi // different var with different address.
 
-using BigInt = int64 // is not a distinct type.
+using BigInt = Int64 // is not a distinct type.
 
-struct UserID = uint32 // is a distinct type.
+struct UserID = UInt32 // is a distinct type.
 
 struct Color {
-	r, g, b uint8
+	r, g, b UInt8
 } cases {
 	default struct Rgb
 	red = (255, 0, 0)
@@ -60,45 +68,45 @@ struct Color {
 	blue = (0, 0, 255)
 }
 
-struct Direction = uint8 cases {
+struct Direction = UInt8 cases {
 	north
 	south
 	east
 	west
 }
 
-var tuple (x int32, y string) = (1, "a")
-var tuple = (1, "a") as (x int32, y string)
-var array [10]int32 = [1, 2, 3]
-var array = [1, 2, 3] as [10]int32
-new([] as [10]int32) using heap
-new((1, "a") as (int32, string))
+var tuple (x Int32, y String) = (1, "a")
+var tuple = (1, "a") as (x Int32, y String)
+var array [10]Int32 = [1, 2, 3]
+var array = [1, 2, 3] as [10]Int32
+new([] as [10]Int32) using heap
+new((1, "a") as (Int32, String))
 
-maybe int32
-any<int32, MyError>
-all<File, Readable>
-owned &int32
-weak &int32
-raw &int32
-mutex int32
+Maybe Int32
+Any<Int32, MyError>
+All<File, Readable>
+Owned &Int32
+Weak &Int32
+Raw &Int32
+Mutex Int32
 
 
 
 
 struct Foo {
-	x owned &int32
+	x Owned &Int32
 }
-func make() any<Foo, AllocationError> {
+func make() Any<Foo, AllocationError> {
 	return Foo(new(1))
 }
 
 var heapA = BlockAllocator(1024)
 var heapB = StackAllocator(1024)
-var foo owned &Foo = new(Foo() using heapA) using heapB
+var foo Owned &Foo = new(Foo() using heapA) using heapB
 drop(*foo) using heapA
 drop(foo) using heapB
 
-using var allocator = BlockAllocator(1024)
+using var Allocator = BlockAllocator(1024)
 var foo = new(Foo())
 
 
@@ -107,20 +115,20 @@ pub namespace animals
 using std.io.printLine
 
 pub trait Animal {
-	pub name string
-	pub age uint32
+	pub name String
+	pub age UInt32
 }
 
 pub method makeNoise(animal &Animal)
 
 pub struct Dog {
 	using Animal
-	pub tag string
+	pub tag String
 }
 
 pub struct Cat {
 	using Animal
-	pub breed string
+	pub breed String
 }
 
 pub func makeNoise(dog &Dog) {
@@ -146,18 +154,18 @@ pub namespace physics
 pub struct Entity {
 	pub pos, vel, acc Vector
 } cases {
-	struct Circle {pub radius float64}
-	struct Mesh {pub vertices owned []Vector}
+	struct Circle {pub radius Float64}
+	struct Mesh {pub vertices Owned []Vector}
 }
 
 pub method update(entity &mut Entity)
 
 pub struct Vector {
-	using std.operations.To<string>, .Equality, .Arithmetic
-	pub x, y float64
+	using std.operations.To<String>, .Equality, .Arithmetic
+	pub x, y Float64
 }
 
-pub func to<string>(vector &Vector) {
+pub func to<String>(vector &Vector) {
 	return new(f"({vector.x}, {.y})")
 }
 
@@ -169,12 +177,12 @@ using std.math.pi
 using std.io.printLine
 
 pub struct Shape cases {
-	struct Circle {pub radius float64}
-	struct Triangle {pub base, height float64}
-	struct Rectangle {pub width, height float64}
+	struct Circle {pub radius Float64}
+	struct Triangle {pub base, height Float64}
+	struct Rectangle {pub width, height Float64}
 }
 
-pub method area(shape &Shape) float64
+pub method area(shape &Shape) Float64
 
 pub func area(circle &Circle) {
 	return pi*circle.radius*circle.radius
@@ -202,7 +210,7 @@ pub func main() {
 
 pub namespace compiler
 
-pub struct TokenType = uint8 cases {
+pub struct TokenType = UInt8 cases {
 	number
 	character
 	str
@@ -214,34 +222,34 @@ pub struct TokenType = uint8 cases {
 
 pub struct Token {
 	pub type TokenType
-	pub textStart Index<char, uint32>
-	pub textLength uint32
+	pub textStart Index<Char, UInt32>
+	pub textLength UInt32
 }
 
-pub struct LexerErrorType = string cases {
+pub struct LexerErrorType = String cases {
 	invalidToken = "Invalid token."
 	...
 }
 
 pub struct LexerError {
-	using error
+	using Error
 	pub type LexerErrorType
-	pub tokenIndex Index<Token, uint32>
-	pub textStart Index<char, uint32>
-	pub textLength uint32
+	pub tokenIndex Index<Token, UInt32>
+	pub textStart Index<Char, UInt32>
+	pub textLength UInt32
 }
 
 pub struct LexerResult {
-	pub tokens maybe owned []Token
-	pub errors maybe owned []LexerError
+	pub tokens Maybe Owned []Token
+	pub errors Maybe Owned []LexerError
 }
 
-pub func lex(text string) LexerResult
+pub func lex(text String) LexerResult
 
 
 pub namespace compiler
 
-pub struct NodeType = uint8 cases {
+pub struct NodeType = UInt8 cases {
 	program
 	...
 }
@@ -252,23 +260,23 @@ pub struct Node {
 	pub child NodeOrToken
 }
 
-pub struct NodeOrToken = any<Index<Node, uint32>, Index<Token, uint32>>
+pub struct NodeOrToken = Any<Index<Node, UInt32>, Index<Token, UInt32>>
 
-pub struct ParserErrorType = string cases {
+pub struct ParserErrorType = String cases {
 	expectedIdentifier = "Expected an identifier."
 	...
 }
 
 pub struct ParserError {
-	using error
+	using Error
 	pub type ParserErrorType
 	pub treeStart NodeOrToken
-	pub treeLength uint32
+	pub treeLength UInt32
 }
 
 pub struct ParserResult {
-	pub nodes owned []NodeOrToken
-	pub errors owned []ParserError
+	pub nodes Owned []NodeOrToken
+	pub errors Owned []ParserError
 }
 
 pub func parse(tokens []Token) ParserResult
