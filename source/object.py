@@ -14,8 +14,9 @@ class Symbol:
 		self.name = name
 		self.visibility = visibility
 		self.type = type
+		self.value = value
 
-	def __str__(self) -> str:
+	def __repr__(self) -> str:
 		return self.name
 	
 	def __eq__(self, other: "Symbol") -> bool:
@@ -71,6 +72,44 @@ class Object:
 			namespace = namespace[identifier]
 		namespace[identifiers[-1]] = value
 		return False
+
+class Scope:
+	def __init__(self):
+		self.symbols: map[str, Symbol] = {}
+
+	def getSymbol(self, name: str) -> Symbol | None:
+		return self.symbols.get(name)
+
+	def addSymbol(self, symbol: Symbol) -> bool:
+		if self.getSymbol(symbol.name) is not None:
+			return True
+		self.symbols[symbol.name] = symbol
+
+class Environment:
+	def __init__(self):
+		self.scopes: list[Scope] = []
+
+	def pushScope(self):
+		self.scopes.append(Scope())
+	
+	def popScope(self):
+		self.scopes.pop()
+
+	def getSymbol(self, name: str) -> Any | None:
+		for i in range(len(self.scopes) - 1, -1, -1):
+			symbol = self.scopes[i].getSymbol(name)
+			if symbol is not None:
+				return symbol
+		return None
+	
+	def addSymbol(self, symbol: Symbol) -> bool:
+		if self.getSymbol(symbol.name) is not None:
+			return True
+		self.scopes[-1].addSymbol(symbol)
+		return False
+
+def resolveName(name: str, object: Object, environment: Environment) -> Any | None:
+	pass
 
 def qualifiedNameToStr(name: Node) -> str:
 	return ".".join(child.text for child in name.children)

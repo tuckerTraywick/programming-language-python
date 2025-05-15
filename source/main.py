@@ -3,7 +3,7 @@ from parser import *
 from object import *
 
 if __name__ == "__main__":
-	text = """ namespace hello; """
+	text = """ pub namespace hello; """
 	(tokens, lexerErrors) = lex(text)
 	print("---- TOKENS ----")
 	print("\n".join(map(str, tokens)))
@@ -19,7 +19,6 @@ if __name__ == "__main__":
 	compilerErrors = []
 	print("\n---- SYMBOLS ----")
 	validateTree(tree, object, compilerErrors)
-	validateTree(tree, object, compilerErrors)
 	for name in object.publicSymbols.keys():
 		print(f"{name}: {str(object.getPublicSymbol(name))}")
 	for name in object.privateSymbols.keys():
@@ -27,3 +26,8 @@ if __name__ == "__main__":
 	print("\n---- COMPILER ERRORS ----")
 	for error in compilerErrors:
 		print(error)	
+
+	env = Environment()
+	env.pushScope()
+	env.addSymbol(Symbol("a", "local", "int32", Token("number", "123")))
+	print(env.getSymbol("a"))

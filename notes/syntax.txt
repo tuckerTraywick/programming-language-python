@@ -71,8 +71,8 @@ var tuple (x int32, y string) = (1, "a")
 var tuple = (1, "a") as (x int32, y string)
 var array [10]int32 = [1, 2, 3]
 var array = [1, 2, 3] as [10]int32
-new [] as [10]int32 using heap
-new (1, "a") as (int32, string)
+new([] as [10]int32) using heap
+new((1, "a") as (int32, string))
 
 maybe int32
 any<int32, MyError>
@@ -89,18 +89,17 @@ struct Foo {
 	x owned &int32
 }
 func make() any<Foo, AllocationError> {
-	return Foo(new 1)
+	return Foo(new(1))
 }
 
 var heapA = BlockAllocator(1024)
 var heapB = StackAllocator(1024)
-var foo owned &Foo = new Foo() using heapA using heapB
-drop *foo using heapA
-drop foo using heapB
+var foo owned &Foo = new(Foo() using heapA) using heapB
+drop(*foo) using heapA
+drop(foo) using heapB
 
 using var allocator = BlockAllocator(1024)
-var foo = new Foo()
-
+var foo = new(Foo())
 
 
 
@@ -159,7 +158,7 @@ pub struct Vector {
 }
 
 pub func to<string>(vector &Vector) {
-	return new f"({vector.x}, {.y})"
+	return new(f"({vector.x}, {.y})")
 }
 
 
@@ -197,3 +196,79 @@ pub func main() {
 	shape = Rectangle(4, 5)
 	printLine(shape->area())
 }
+
+
+
+
+pub namespace compiler
+
+pub struct TokenType = uint8 cases {
+	number
+	character
+	str
+	identifier
+	
+	namespace_
+	...
+}
+
+pub struct Token {
+	pub type TokenType
+	pub textStart Index<char, uint32>
+	pub textLength uint32
+}
+
+pub struct LexerErrorType = string cases {
+	invalidToken = "Invalid token."
+	...
+}
+
+pub struct LexerError {
+	using error
+	pub type LexerErrorType
+	pub tokenIndex Index<Token, uint32>
+	pub textStart Index<char, uint32>
+	pub textLength uint32
+}
+
+pub struct LexerResult {
+	pub tokens maybe owned []Token
+	pub errors maybe owned []LexerError
+}
+
+pub func lex(text string) LexerResult
+
+
+pub namespace compiler
+
+pub struct NodeType = uint8 cases {
+	program
+	...
+}
+
+pub struct Node {
+	pub type NodeType
+	pub next NodeOrToken
+	pub child NodeOrToken
+}
+
+pub struct NodeOrToken = any<Index<Node, uint32>, Index<Token, uint32>>
+
+pub struct ParserErrorType = string cases {
+	expectedIdentifier = "Expected an identifier."
+	...
+}
+
+pub struct ParserError {
+	using error
+	pub type ParserErrorType
+	pub treeStart NodeOrToken
+	pub treeLength uint32
+}
+
+pub struct ParserResult {
+	pub nodes owned []NodeOrToken
+	pub errors owned []ParserError
+}
+
+pub func parse(tokens []Token) ParserResult
