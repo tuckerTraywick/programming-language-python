@@ -149,6 +149,17 @@ class Visitor:
 						self.errors.append(CompilerError(f"Redefinition of symbol `{qualifiedName}`."))
 						return True
 					self.object.addPublicSymbol(qualifiedName, Symbol(qualifiedName, "pub", type, value))
+				# var name type = value ;
+				else:
+					qualifiedName = self.currentNamespace + "." + tree.children[1].text
+					type = tree.children[2]
+					value = None
+					if len(tree.children) >= 6:
+						value = tree.children[4]
+					if self.object.getSymbol(qualifiedName):
+						self.errors.append(CompilerError(f"Redefinition of symbol `{qualifiedName}`."))
+						return True
+					self.object.addPrivateSymbol(qualifiedName, Symbol(qualifiedName, "priv", type, value))
 		return False
 
 	def validate(self, tree):
