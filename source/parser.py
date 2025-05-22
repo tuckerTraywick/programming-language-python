@@ -439,7 +439,10 @@ class Parser:
 	
 	def parseTraitDefinition(self, allowPub: bool=True):
 		self.beginNode("trait definintion")
-		if not allowPub and self.consumeTokenText("pub"): return self.emitError("Access modifier not allowed here.")
+		if not allowPub and self.consumeTokenText("pub"):
+			return self.emitError("Access modifier not allowed here.")
+		else:
+			self.consumeTokenText("pub")
 		if not self.consumeTokenText("trait"): return self.backtrack()
 		if not self.consumeTokenType("identifier"): return self.emitError("Expected a struct name.")
 		self.parseGenericParameters()
@@ -450,7 +453,10 @@ class Parser:
 	
 	def parseStructDefinition(self, allowPub: bool=True):
 		self.beginNode("struct definintion")
-		if not allowPub and self.consumeTokenText("pub"): return self.emitError("Access modifier not allowed here.")
+		if not allowPub and self.consumeTokenText("pub"):
+			return self.emitError("Access modifier not allowed here.")
+		else:
+			self.consumeTokenText("pub")
 		if not self.consumeTokenText("struct"): return self.backtrack()
 		if not self.consumeTokenType("identifier"): return self.emitError("Expected a struct name.")
 		self.parseGenericParameters()
@@ -461,7 +467,10 @@ class Parser:
 
 	def parseMethodDefinition(self, allowPub: bool=True):
 		self.beginNode("method definition")
-		if not allowPub and self.consumeTokenText("pub"): return self.emitError("Access modifier not allowed here.")
+		if not allowPub and self.consumeTokenText("pub"):
+			return self.emitError("Access modifier not allowed here.")
+		else:
+			self.consumeTokenText("pub")
 		if not self.consumeTokenText("method"): return self.backtrack()
 		if not self.consumeTokenType("identifier"): return self.emitError("Expected a method name.")
 		self.parseGenericParameters()
@@ -472,7 +481,11 @@ class Parser:
 	
 	def parseFunctionDefinition(self, allowPub: bool=True):
 		self.beginNode("function definition")
-		if not allowPub and self.consumeTokenText("pub"): return self.emitError("Access modifier not allowed here.")
+		if not allowPub and self.consumeTokenText("pub"):
+			return self.emitError("Access modifier not allowed here.")
+		else:
+			self.consumeTokenText("pub")
+			print("tree", self.tree, self.currentTokenIndex, allowPub)
 		if not self.consumeTokenText("func"): return self.backtrack()
 		if not self.consumeTokenType("identifier"): return self.emitError("Expected a function name.")
 		self.parseGenericParameters()

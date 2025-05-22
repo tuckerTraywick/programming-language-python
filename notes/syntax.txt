@@ -1,5 +1,21 @@
-1 as Int32->f()   (1 as Int32)->f()
-1->f() as Int32   (1->f()) as Int32
+# Types are required.
+(var a int32 1)
+(fun f (x int32) int32 (+ x 1))
+(pub struct Animal
+	(pub name string)
+	(pub age uint32)
+)
+(struct List [T type]
+	(first optional owned & T)
+	(last optional owned & T)
+)
+
+
+
+
+
+1 as int32->f()   (1 as int32)->f()
+1->f() as int32   (1->f()) as int32
 f as Callback(x)
 
 . () []
@@ -9,19 +25,11 @@ as  // Doesn't care about precedence for rhs since it parses a type and not an e
 
 *x->f()   *(x->(f()))
 a.b->f()   (a.b)->(f())
-*x as Int32   (*x) as Int32
-x->f() as Int32   (x->(f())) as Int32
-x as Int32->f()   (x as Int32)->f()
+*x as int32   (*x) as int32
+x->f() as int32   (x->(f())) as int32
+x as int32->f()   (x as int32)->f()
 
-Maybe<Owned<&Int32>>
-
-
-
-
-
-pub var a Int32 = 1
-
-
+maybe<owned<&int32>>
 
 
 
@@ -50,17 +58,17 @@ using std.io
 	.printLine,
 	.inputLine
 using myIo = std.io // explicit export.
-pub using std.io.* // export All.
+pub using std.io.* // export all.
 pub using myPrint = std.io.printLine // explicit function export.
 pub using myPi = std.math.pi // same variable with same address.
 pub var myPi = std.math.pi // different var with different address.
 
-using BigInt = Int64 // is not a distinct type.
+using Bigint = int64 // is not a distinct type.
 
-struct UserID = UInt32 // is a distinct type.
+struct UserID = uint32 // is a distinct type.
 
 struct Color {
-	r, g, b UInt8
+	r, g, b uint8
 } cases {
 	default struct Rgb
 	red = (255, 0, 0)
@@ -68,45 +76,45 @@ struct Color {
 	blue = (0, 0, 255)
 }
 
-struct Direction = UInt8 cases {
+struct Direction = uint8 cases {
 	north
 	south
 	east
 	west
 }
 
-var tuple (x Int32, y String) = (1, "a")
-var tuple = (1, "a") as (x Int32, y String)
-var array [10]Int32 = [1, 2, 3]
-var array = [1, 2, 3] as [10]Int32
-new([] as [10]Int32) using heap
-new((1, "a") as (Int32, String))
+var tuple (x int32, y string) = (1, "a")
+var tuple = (1, "a") as (x int32, y string)
+var array [10]int32 = [1, 2, 3]
+var array = [1, 2, 3] as [10]int32
+new([] as [10]int32) using heap
+new((1, "a") as (int32, string))
 
-Maybe Int32
-Any<Int32, MyError>
-All<File, Readable>
-Owned &Int32
-Weak &Int32
-Raw &Int32
-Mutex Int32
+maybe int32
+any<int32, MyError>
+all<File, Readable>
+owned &int32
+weak &int32
+raw &int32
+mutex int32
 
 
 
 
 struct Foo {
-	x Owned &Int32
+	x owned &int32
 }
-func make() Any<Foo, AllocationError> {
+func make() any<Foo, allocationError> {
 	return Foo(new(1))
 }
 
-var heapA = BlockAllocator(1024)
-var heapB = StackAllocator(1024)
-var foo Owned &Foo = new(Foo() using heapA) using heapB
+var heapA = Blockallocator(1024)
+var heapB = Stackallocator(1024)
+var foo owned &Foo = new(Foo() using heapA) using heapB
 drop(*foo) using heapA
 drop(foo) using heapB
 
-using var Allocator = BlockAllocator(1024)
+using var allocator = Blockallocator(1024)
 var foo = new(Foo())
 
 
@@ -115,20 +123,20 @@ pub namespace animals
 using std.io.printLine
 
 pub trait Animal {
-	pub name String
-	pub age UInt32
+	pub name string
+	pub age uint32
 }
 
 pub method makeNoise(animal &Animal)
 
 pub struct Dog {
 	using Animal
-	pub tag String
+	pub tag string
 }
 
 pub struct Cat {
 	using Animal
-	pub breed String
+	pub breed string
 }
 
 pub func makeNoise(dog &Dog) {
@@ -154,18 +162,18 @@ pub namespace physics
 pub struct Entity {
 	pub pos, vel, acc Vector
 } cases {
-	struct Circle {pub radius Float64}
-	struct Mesh {pub vertices Owned []Vector}
+	struct Circle {pub radius float64}
+	struct Mesh {pub vertices owned []Vector}
 }
 
 pub method update(entity &mut Entity)
 
 pub struct Vector {
-	using std.operations.To<String>, .Equality, .Arithmetic
-	pub x, y Float64
+	using std.operations.To<string>, .Equality, .Arithmetic
+	pub x, y float64
 }
 
-pub func to<String>(vector &Vector) {
+pub func to<string>(vector &Vector) {
 	return new(f"({vector.x}, {.y})")
 }
 
@@ -177,12 +185,12 @@ using std.math.pi
 using std.io.printLine
 
 pub struct Shape cases {
-	struct Circle {pub radius Float64}
-	struct Triangle {pub base, height Float64}
-	struct Rectangle {pub width, height Float64}
+	struct Circle {pub radius float64}
+	struct Triangle {pub base, height float64}
+	struct Rectangle {pub width, height float64}
 }
 
-pub method area(shape &Shape) Float64
+pub method area(shape &Shape) float64
 
 pub func area(circle &Circle) {
 	return pi*circle.radius*circle.radius
@@ -210,7 +218,7 @@ pub func main() {
 
 pub namespace compiler
 
-pub struct TokenType = UInt8 cases {
+pub struct TokenType = uint8 cases {
 	number
 	character
 	str
@@ -222,11 +230,11 @@ pub struct TokenType = UInt8 cases {
 
 pub struct Token {
 	pub type TokenType
-	pub textStart Index<Char, UInt32>
-	pub textLength UInt32
+	pub textStart Index<char, uint32>
+	pub textLength uint32
 }
 
-pub struct LexerErrorType = String cases {
+pub struct LexerErrorType = string cases {
 	invalidToken = "Invalid token."
 	...
 }
@@ -234,22 +242,22 @@ pub struct LexerErrorType = String cases {
 pub struct LexerError {
 	using Error
 	pub type LexerErrorType
-	pub tokenIndex Index<Token, UInt32>
-	pub textStart Index<Char, UInt32>
-	pub textLength UInt32
+	pub tokenIndex Index<Token, uint32>
+	pub textStart Index<char, uint32>
+	pub textLength uint32
 }
 
 pub struct LexerResult {
-	pub tokens Maybe Owned []Token
-	pub errors Maybe Owned []LexerError
+	pub tokens maybe owned []Token
+	pub errors maybe owned []LexerError
 }
 
-pub func lex(text String) LexerResult
+pub func lex(text string) LexerResult
 
 
 pub namespace compiler
 
-pub struct NodeType = UInt8 cases {
+pub struct NodeType = uint8 cases {
 	program
 	...
 }
@@ -260,9 +268,9 @@ pub struct Node {
 	pub child NodeOrToken
 }
 
-pub struct NodeOrToken = Any<Index<Node, UInt32>, Index<Token, UInt32>>
+pub struct NodeOrToken = any<Index<Node, uint32>, Index<Token, uint32>>
 
-pub struct ParserErrorType = String cases {
+pub struct ParserErrorType = string cases {
 	expectedIdentifier = "Expected an identifier."
 	...
 }
@@ -271,12 +279,12 @@ pub struct ParserError {
 	using Error
 	pub type ParserErrorType
 	pub treeStart NodeOrToken
-	pub treeLength UInt32
+	pub treeLength uint32
 }
 
 pub struct ParserResult {
-	pub nodes Owned []NodeOrToken
-	pub errors Owned []ParserError
+	pub nodes owned []NodeOrToken
+	pub errors owned []ParserError
 }
 
 pub func parse(tokens []Token) ParserResult

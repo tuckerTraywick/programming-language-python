@@ -3,7 +3,7 @@ from parser import *
 from object import *
 
 if __name__ == "__main__":
-	text = """ pub namespace hello; var a Int32; var a Int32; """
+	text = """ pub func f() int32 {} """
 	(tokens, lexerErrors) = lex(text)
 	print("---- TOKENS ----")
 	print("\n".join(map(str, tokens)))

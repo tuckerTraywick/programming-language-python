@@ -160,6 +160,18 @@ class Visitor:
 						self.errors.append(CompilerError(f"Redefinition of symbol `{qualifiedName}`."))
 						return True
 					self.object.addPrivateSymbol(qualifiedName, Symbol(qualifiedName, "priv", type, value))
+			case "function definition":
+				# pub func name(arg type) type {body}
+				# 0   1    2   3          4    5
+				print(tree)
+				if tree.children[0].text == "pub":
+					qualifiedName = self.currentNamespace + "." + tree.children[2]
+					arguments = tree.children[3]
+					returnType = tree.children[4]
+					body = tree.children[5]
+					if self.object.getSymbol(qualifiedName):
+						self.errors.append(CompilerError(f"Redefinition of symbol `{qualifiedName}`."))
+						return True					
 		return False
 
 	def validate(self, tree):
