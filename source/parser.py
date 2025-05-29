@@ -80,6 +80,7 @@ class Parser:
 		self.tree = None
 		self.currentNode = self.tree
 		self.errors = []
+		self.tokenIndexStack = []
 
 	@property
 	def currentToken(self):
@@ -118,6 +119,7 @@ class Parser:
 		return 0
 	
 	def beginNode(self, type):
+		self.tokenIndexStack.append(self.currentTokenIndex)
 		if self.tree is None:
 			self.tree = Node(type, None)
 			self.currentNode = self.tree
@@ -127,11 +129,13 @@ class Parser:
 		return True
 	
 	def endNode(self):
+		self.tokenIndexStack.pop()
 		self.currentNode = self.currentNode.parent
 		return True
 	
 	def backtrack(self):
-		self.endNode()
+		self.currentTokenIndex = self.tokenIndexStack.pop()
+		self.currentNode = self.currentNode.parent
 		if self.currentNode:
 			self.currentNode.children.pop()
 		return False

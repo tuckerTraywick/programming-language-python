@@ -165,7 +165,7 @@ class Visitor:
 				# 0   1    2   3          4    5
 				print(tree)
 				if tree.children[0].text == "pub":
-					qualifiedName = self.currentNamespace + "." + tree.children[2]
+					qualifiedName = self.currentNamespace + "." + tree.children[2].text
 					arguments = tree.children[3]
 					returnType = tree.children[4]
 					body = tree.children[5]
