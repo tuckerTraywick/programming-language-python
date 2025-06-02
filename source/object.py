@@ -163,7 +163,6 @@ class Visitor:
 			case "function definition":
 				# pub func name(arg type) type {body}
 				# 0   1    2   3          4    5
-				print(tree)
 				if tree.children[0].text == "pub":
 					qualifiedName = self.currentNamespace + "." + tree.children[2].text
 					arguments = tree.children[3]
@@ -171,7 +170,17 @@ class Visitor:
 					body = tree.children[5]
 					if self.object.getSymbol(qualifiedName):
 						self.errors.append(CompilerError(f"Redefinition of symbol `{qualifiedName}`."))
-						return True					
+						return True
+				# func name(arg type) type {body}
+				# 0    1   2          3    4 
+				else:
+					qualifiedName = self.currentNamespace + "." + tree.children[1].text
+					arguments = tree.children[2]
+					returnType = tree.children[3]
+					body = tree.children[4]
+					if self.object.getSymbol(qualifiedName):
+						self.errors.append(CompilerError(f"Redefinition of symbol `{qualifiedName}`."))
+						return True
 		return False
 
 	def validate(self, tree):
