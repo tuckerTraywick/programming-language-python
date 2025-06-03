@@ -489,7 +489,6 @@ class Parser:
 			return self.emitError("Access modifier not allowed here.")
 		else:
 			self.consumeTokenText("pub")
-			print("tree", self.tree, self.currentTokenIndex, allowPub)
 		if not self.consumeTokenText("func"): return self.backtrack()
 		if not self.consumeTokenType("identifier"): return self.emitError("Expected a function name.")
 		self.parseGenericParameters()

@@ -123,8 +123,18 @@ class Visitor:
 		if value is not None:
 			return value
 		return self.object.getPublicSymbol(name)
+	
+	# Does depth-first left to right traversal of the tree.
+	def visitWith(self, tree, function):
+		if isinstance(tree, Token):
+			return function(tree)
+		for child in tree.children:
+			if function(child): return True
+		return function(tree)
 
-	def validateProgramStatement(self, tree):
+	def validateIdentifiers(self, tree):
+		if isinstance(tree, Token):
+			pass
 		match tree.type:
 			case "namespace statement":
 				self.currentNamespace = qualifiedNameToStr(tree.children[-2])
@@ -189,12 +199,7 @@ class Visitor:
 		self.environment.pushScope()
 		self.errors = []
 		self.currentNamespace = ""
-		if isinstance(tree, Node):
-			match tree.type:
-				case "program":
-					for child in tree.children:
-						if self.validateProgramStatement(child):
-							return True
+		if self.visitWith(tree, self.validateIdentifiers): return True
 		return False
 
 def qualifiedNameToStr(name):
